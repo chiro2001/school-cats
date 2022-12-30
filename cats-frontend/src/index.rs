@@ -4,6 +4,7 @@ use yew::prelude::*;
 use web_sys::HtmlTextAreaElement;
 use web_sys::console;
 use cats_api::user::User;
+use crate::login::LoginPage;
 use crate::user::load_user;
 
 #[function_component]
@@ -67,7 +68,7 @@ pub fn IndexPage() -> Html {
             });
         }, ());
     };
-    html! {
+    let common = html! {
         <>
             <h1>{ "主页" }</h1>
             <p>{ match &*user {
@@ -78,5 +79,10 @@ pub fn IndexPage() -> Html {
             <CatsFeedings/>
             <Posts/>
         </>
+    };
+    let login = html! { <LoginPage/> };
+    match &*user {
+        Some(u) if u.username.is_empty() => login,
+        _ => common
     }
 }

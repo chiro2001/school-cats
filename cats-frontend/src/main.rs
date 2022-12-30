@@ -3,6 +3,7 @@ mod routes;
 mod index;
 mod user;
 mod storage;
+mod login;
 
 use app::App;
 
