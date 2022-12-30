@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 cats-api = { path = "cats-api" }
+tokio = { version = "1.23.0", features = ["macros"] }
+warp = "0.3.3"
+serde = { version = "1.0.152", features = ["derive"] }
 
 [workspace]
 members = [
