@@ -24,3 +24,5 @@ yew-router = "0.17.0"
 cats-api = { path = "../cats-api" }
 gloo-net = "0.2.5"
 wasm-bindgen-futures = "0.4.33"
+serde = { version = "1.0.152", features = ["derive"] }
+anyhow = "1.0.68"

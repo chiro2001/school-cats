@@ -4,6 +4,7 @@ mod index;
 mod user;
 mod storage;
 mod login;
+mod api;
 
 use app::App;
 
