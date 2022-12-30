@@ -7,14 +7,6 @@ use serde::Deserialize;
 use cats_api::Hello;
 use crate::api::{API, fetch};
 
-#[derive(Clone, PartialEq, Deserialize)]
-struct Video {
-    id: usize,
-    title: String,
-    speaker: String,
-    url: String,
-}
-
 #[function_component]
 pub fn LoginPage() -> Html {
     let username = NodeRef::default();
@@ -22,9 +14,6 @@ pub fn LoginPage() -> Html {
     let onclick = {
         let username = username.clone();
         let password = password.clone();
-        // use_effect_with_deps(move |_| {
-        //     wasm_bindgen_futures::spawn_local(async move {});
-        // }, ());
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
             let password: String = password.cast::<HtmlInputElement>().unwrap().value().into();
