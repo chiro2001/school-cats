@@ -2,8 +2,10 @@
 
 use web_sys::{console, HtmlInputElement};
 use yew::{Callback, function_component, Html, html, NodeRef, use_effect_with_deps};
-use gloo_net::http::Request;
+use gloo_net::http::{Method, Request};
 use serde::Deserialize;
+use cats_api::Hello;
+use crate::api::{API, fetch};
 
 #[derive(Clone, PartialEq, Deserialize)]
 struct Video {
@@ -28,13 +30,9 @@ pub fn LoginPage() -> Html {
             let password: String = password.cast::<HtmlInputElement>().unwrap().value().into();
             console::log_2(&"login/register username:".into(), &username.into());
             wasm_bindgen_futures::spawn_local(async move {
-                let v: Vec<Video> = Request::get("https://yew.rs/tutorial/data.json")
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
+                let r: Hello = fetch(Method::GET, format!("{}/hello/test", API).as_str())
+                    .await.unwrap_or(Hello::default());
+                console::log_1(&format!("{:?}", r).into());
             });
         })
     };
