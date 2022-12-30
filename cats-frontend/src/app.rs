@@ -20,7 +20,7 @@ pub fn app() -> Html {
     html! {
         <main>
             <BrowserRouter>
-                <Switch<Route> render={switch} />
+                <Switch<Route> render={switch}/>
             </BrowserRouter>
         </main>
     }
