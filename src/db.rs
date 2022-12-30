@@ -1,5 +1,7 @@
 use anyhow::{anyhow, Result};
 use sqlx::{Database, Pool};
+use log::*;
+use sqlx::migrate::MigrateDatabase;
 
 pub enum SupportedSQL {
     MYSQL,
@@ -7,10 +9,12 @@ pub enum SupportedSQL {
 }
 
 pub const SQL_USE: SupportedSQL = SupportedSQL::SQLITE;
+
 type DB = sqlx::Sqlite;
+
 pub const SQLITE_PATH: &str = "database/sqlite.db";
 
-pub async fn db_init() -> Result<Pool<DB>> {
+pub async fn db_conn() -> Result<Pool<DB>> {
     let pool = match SQL_USE {
         // SupportedSQL::MYSQL => {
         //     sqlx::mysql::MySqlPoolOptions::new()
@@ -20,11 +24,20 @@ pub async fn db_init() -> Result<Pool<DB>> {
         SupportedSQL::SQLITE => {
             sqlx::sqlite::SqlitePoolOptions::new()
                 .max_connections(5)
-                .connect("database/sqlite.db").await
+                .connect(SQLITE_PATH).await
         }
         _ => panic!("unsupported")
     };
-    // sqlx::query_as("SELECT $1").bind(150_i64)
+    let pool = match pool {
+        Ok(p) => Ok(p),
+        Err(e) => {
+            error!("cannot connect to pool: {:?}, trying to init database", e);
+            sqlx::Sqlite::create_database(SQLITE_PATH).await?;
+            sqlx::sqlite::SqlitePoolOptions::new()
+                .max_connections(5)
+                .connect(SQLITE_PATH).await
+        }
+    };
     match pool {
         Ok(p) => Ok(p),
         Err(e) => Err(anyhow!("database connect failed! {:?}", e))
