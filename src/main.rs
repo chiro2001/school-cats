@@ -1,5 +1,9 @@
+mod db;
+
 use warp::Filter;
 use cats_api::*;
+use crate::db::db_init;
+use anyhow::Result;
 
 // fn json_body() -> impl Filter<Extract = (Item,), Error = warp::Rejection> + Clone {
 //     // When accepting a body, we want a JSON body
@@ -8,7 +12,8 @@ use cats_api::*;
 // }
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() {
+async fn main() -> Result<()> {
+    let pool = db_init().await?;
     println!("school-cats backend! server running on http://127.0.0.1:{}/", PORT);
     let cors = warp::cors().allow_any_origin();
     let hello = warp::path!("hello" / String)
@@ -20,5 +25,6 @@ async fn main() {
     //     .and(warp::path::end())
     //     .and(json_body())
 
-    warp::serve(hello).run(([127, 0, 0, 1], PORT)).await
+    warp::serve(hello).run(([127, 0, 0, 1], PORT)).await;
+    Ok(())
 }
