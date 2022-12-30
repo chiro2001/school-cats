@@ -2,6 +2,7 @@ mod app;
 mod routes;
 mod index;
 mod user;
+mod storage;
 
 use app::App;
 

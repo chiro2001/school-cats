@@ -3,6 +3,7 @@
 use yew::prelude::*;
 use web_sys::HtmlTextAreaElement;
 use web_sys::console;
+use cats_api::user::User;
 use crate::user::load_user;
 
 #[function_component]
@@ -53,11 +54,26 @@ fn Posts() -> Html {
     }
 }
 
-pub fn index() -> Html {
-    let user = load_user();
+#[function_component]
+pub fn IndexPage() -> Html {
+    let user = use_state(|| None);
+    {
+        let user = user.clone();
+        use_effect_with_deps(move |_| {
+            let user = user.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let fetched_user = load_user().await;
+                user.set(fetched_user);
+            });
+        }, ());
+    };
     html! {
         <>
             <h1>{ "主页" }</h1>
+            <p>{ match &*user {
+                None => "None".to_string(),
+                Some(u) => format!("{:?}", u).to_string(),
+            } }</p>
             <CatsMap/>
             <CatsFeedings/>
             <Posts/>

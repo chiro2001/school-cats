@@ -1,9 +1,24 @@
-// use web_sys::{console, local_storage};
-use web_sys::console;
+use web_sys::{console, Storage};
 use cats_api::user::User;
+use crate::storage::storage;
 
-pub fn load_user() -> Option<User> {
-    let local_storage = web_sys::window().unwrap().local_storage().unwrap().unwrap();
-    console::log_1(&"testing".into());
-    None
+async fn fetch_token(username: &str) -> &str {
+    ""
+}
+
+pub async fn load_user() -> Option<User> {
+    console::log_1(&"loading user...".into());
+    let local_storage = storage();
+    match local_storage.get_item("username") {
+        Ok(v) => match v {
+            Some(v) => {
+                None
+            }
+            None => {
+                // need to login / register to get username, will jump to login page
+                Some(User::default())
+            }
+        },
+        Err(e) => panic!("get localStorage error! {:?}", e)
+    }
 }

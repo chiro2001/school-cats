@@ -1,13 +1,15 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::index::index;
+use crate::index::IndexPage;
 use crate::routes::Route;
 
 fn switch(route: Route) -> Html {
     use Route::*;
     match route {
         Index => {
-            index()
+            html! {
+                <IndexPage/>
+            }
         }
         _ => html! {
             <h1>{ "你来到了没有猫猫的可怕地方！" }</h1>
