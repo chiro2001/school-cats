@@ -4,6 +4,7 @@ use warp::Filter;
 use cats_api::*;
 use crate::db::db_conn;
 use anyhow::Result;
+use log::info;
 
 // fn json_body() -> impl Filter<Extract = (Item,), Error = warp::Rejection> + Clone {
 //     // When accepting a body, we want a JSON body
@@ -13,9 +14,13 @@ use anyhow::Result;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "debug");
+    }
     env_logger::init();
+    info!("school-cats backend!");
     let pool = db_conn().await?;
-    println!("school-cats backend! server running on http://127.0.0.1:{}/", PORT);
+    info!("server running on http://127.0.0.1:{}/", PORT);
     let cors = warp::cors().allow_any_origin();
     let hello = warp::path!("hello" / String)
         .map(|name: String| serde_json::to_string(&Hello { msg: name.to_string() }).unwrap())
