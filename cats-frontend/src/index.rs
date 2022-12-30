@@ -3,6 +3,7 @@
 use yew::prelude::*;
 use web_sys::HtmlTextAreaElement;
 use web_sys::console;
+use crate::user::load_user;
 
 #[function_component]
 fn CatsMap() -> Html {
@@ -53,6 +54,7 @@ fn Posts() -> Html {
 }
 
 pub fn index() -> Html {
+    let user = load_user();
     html! {
         <>
             <h1>{ "主页" }</h1>
