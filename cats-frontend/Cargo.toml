@@ -1,14 +1,15 @@
 [package]
-name = "trunk-template"
+name = "school-cats-frontend"
 version = "0.1.0"
 edition = "2021"
-description = "Template for starting a Yew project using Trunk"
+description = "Frontend of school-cats project"
 readme = "README.md"
-repository = "https://github.com/yewstack/yew-trunk-minimal-template"
-license = "MIT OR Apache-2.0"
+repository = "https://github.com/chiro2001/school-cats/cats-frontend"
+license = "MIT"
 keywords = ["yew", "trunk"]
 categories = ["gui", "wasm", "web-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 yew = { version="0.20", features=["csr"] }
+yew-router = "0.17.0"

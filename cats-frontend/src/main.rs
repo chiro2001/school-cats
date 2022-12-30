@@ -1,4 +1,6 @@
 mod app;
+mod routes;
+mod index;
 
 use app::App;
 

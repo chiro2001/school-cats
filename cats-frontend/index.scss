@@ -7,29 +7,11 @@ body {
 body {
   align-items: center;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+  align-content: flex-start;
+  flex-direction: column;
 
-  background: linear-gradient(to bottom right, #444444, #009a5b);
+  background: linear-gradient(to bottom right, #44444426, #9a9100);
+  color: orangered;
   font-size: 1.5rem;
-}
-
-main {
-  color: #fff6d5;
-  font-family: sans-serif;
-  text-align: center;
-}
-
-.logo {
-  height: 20em;
-}
-
-.heart:after {
-  content: "❤️";
-
-  font-size: 1.75em;
-}
-
-h1 + .subtitle {
-  display: block;
-  margin-top: -1em;
 }
