@@ -14,3 +14,4 @@ categories = ["gui", "wasm", "web-programming"]
 web-sys = "0.3.60"
 yew = { version="0.20", features=["csr"] }
 yew-router = "0.17.0"
+cats-api = { path = "../cats-api" }

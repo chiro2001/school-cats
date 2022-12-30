@@ -1,6 +1,7 @@
 mod app;
 mod routes;
 mod index;
+mod user;
 
 use app::App;
 
