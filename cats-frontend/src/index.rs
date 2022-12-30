@@ -20,22 +20,16 @@ fn CatsFeedings() -> Html {
 
 #[function_component]
 fn Posts() -> Html {
-    // let text = use_state(|| "".to_string());
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
-    // let oninput = {
-    //     let text = text.clone();
-    //     Callback::from(move |e: InputEvent| {
-    //         let input: HtmlTextAreaElement = e.target_unchecked_into();
-    //         text.set(input.value());
-    //     })
-    // };
     let textarea = NodeRef::default();
     let onclick = {
-        // let mut images = images.clone();
+        let images = images.clone();
         let textarea = textarea.clone();
         Callback::from(move |_| {
             console::log_2(&"text:".into(), &textarea.cast::<HtmlTextAreaElement>().unwrap().value().into());
-        //     images.push("https://yew.rs/img/logo.png".to_string());
+            let mut imgs = images.to_vec();
+            imgs.push("https://yew.rs/img/logo.png".to_string());
+            images.set(imgs);
         })
     };
     html! {
