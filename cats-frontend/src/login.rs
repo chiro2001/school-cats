@@ -4,7 +4,8 @@ use web_sys::{console, HtmlInputElement};
 use yew::{Callback, function_component, Html, html, NodeRef, use_effect_with_deps};
 use gloo_net::http::{Method, Request};
 use serde::Deserialize;
-use cats_api::Hello;
+use cats_api::{Empty, Hello};
+use cats_api::user::{LoginPost, LoginResponse};
 use crate::api::{API, fetch};
 
 #[function_component]
@@ -17,10 +18,11 @@ pub fn LoginPage() -> Html {
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
             let password: String = password.cast::<HtmlInputElement>().unwrap().value().into();
-            console::log_2(&"login/register username:".into(), &username.into());
+            console::log_2(&"login/register username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
-                let r: Hello = fetch(Method::GET, format!("{}/hello/test", API).as_str())
-                    .await.unwrap_or(Hello::default());
+                let r: LoginResponse = fetch(Method::POST, format!("{}/login", API).as_str(),
+                                             LoginPost { username, password })
+                    .await.unwrap_or(LoginResponse::default());
                 console::log_1(&format!("{:?}", r).into());
             });
         })

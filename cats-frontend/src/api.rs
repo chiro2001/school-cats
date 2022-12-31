@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use crate::storage::storage;
 use anyhow::{anyhow, Result};
 use gloo_net::http::{Method, Request};
+use cats_api::Empty;
 
 pub const API: &str = "http://127.0.0.1:3030";
 
@@ -31,13 +32,18 @@ pub fn load_tokens() -> (String, String) {
 //     pub data: T,
 // }
 
-pub async fn fetch<T: for<'de> Deserialize<'de>>(method: Method, url: &str) -> Result<T> {
+pub async fn fetch<B: Serialize, T: for<'de> Deserialize<'de>>(method: Method, url: &str, body: B) -> Result<T> {
     let tokens = load_tokens();
-    match Request::new(url)
+    let pre = Request::new(url)
         .method(method)
-        // .header("content-type", "application/json")
-        // .header("token", &*tokens.0)
-        // .header("refresh_token", &*tokens.1)
+        .header("Content-Type", "application/json")
+        .header("Token", &*tokens.0)
+        .header("Refresh-Token", &*tokens.1);
+    let pre = match method {
+        Method::GET => pre,
+        _ => pre.body(serde_json::to_string(&body)?)
+    };
+    match pre
         .send().await {
         Ok(r) => match r.json().await {
             Ok(v) => Ok(v),
