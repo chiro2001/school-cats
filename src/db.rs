@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
@@ -42,7 +42,7 @@ pub async fn db_get_pool() -> Result<Pool> {
             }
             _ => {}
         }
-        Err(e) => {}
+        Err(_e) => {}
     };
     Ok(pool)
 }
