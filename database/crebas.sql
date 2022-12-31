@@ -1,80 +1,80 @@
-drop index Apear3_FK;
-
-drop index Apear2_FK;
-
-drop index Apear_FK;
-
-drop index Apear_PK;
-
-drop table Apear;
-
-drop index Relationship_8_FK;
-
-drop index Cat_PK;
-
-drop table Cat;
-
-drop index CatBreed_PK;
-
-drop table CatBreed;
-
-drop index Commit_PK;
-
-drop table Commit;
-
-drop index 用户_联系方式_FK;
-
-drop index Contact_PK;
-
-drop table Contact;
-
-drop index Feed3_FK;
-
-drop index Feed2_FK;
-
-drop index Feed_FK;
-
-drop index Feed_PK;
-
-drop table Feed;
-
-drop index Image_PK;
-
-drop table Image;
-
-drop index Place_PK;
-
-drop table Place;
-
-drop index Post5_FK;
-
-drop index Post4_FK;
-
-drop index Post3_FK;
-
-drop index Post2_FK;
-
-drop index Post_FK;
-
-drop index Post_PK;
-
-drop table Post;
-
-drop index Treat3_FK;
-
-drop index Treat2_FK;
-
-drop index Treat_FK;
-
-drop index Treat_PK;
-
-drop table Treat;
-
-drop index Relationship_9_FK;
-
-drop index User_PK;
-
-drop table "User";
+-- drop index Appear3_FK;
+--
+-- drop index Appear2_FK;
+--
+-- drop index Appear_FK;
+--
+-- drop index Appear_PK;
+--
+-- drop table Appear;
+--
+-- drop index Relationship_8_FK;
+--
+-- drop index Cat_PK;
+--
+-- drop table Cat;
+--
+-- drop index CatBreed_PK;
+--
+-- drop table CatBreed;
+--
+-- drop index Commit_PK;
+--
+-- drop table Commit;
+--
+-- drop index 鐢ㄦ埛_鑱旂郴鏂瑰紡_FK;
+--
+-- drop index Contact_PK;
+--
+-- drop table Contact;
+--
+-- drop index Feed3_FK;
+--
+-- drop index Feed2_FK;
+--
+-- drop index Feed_FK;
+--
+-- drop index Feed_PK;
+--
+-- drop table Feed;
+--
+-- drop index Image_PK;
+--
+-- drop table Image;
+--
+-- drop index Place_PK;
+--
+-- drop table Place;
+--
+-- drop index Post5_FK;
+--
+-- drop index Post4_FK;
+--
+-- drop index Post3_FK;
+--
+-- drop index Post2_FK;
+--
+-- drop index Post_FK;
+--
+-- drop index Post_PK;
+--
+-- drop table Post;
+--
+-- drop index Treat3_FK;
+--
+-- drop index Treat2_FK;
+--
+-- drop index Treat_FK;
+--
+-- drop index Treat_PK;
+--
+-- drop table Treat;
+--
+-- drop index Relationship_9_FK;
+--
+-- drop index User_PK;
+--
+-- drop table "User";
 
 create table Place (
 placeId              NUMERIC                        not null,
@@ -122,11 +122,11 @@ foreign key (breedId)
       references CatBreed (breedId)
 );
 
-create table Apear (
+create table Appear (
 placeId              NUMERIC                        not null,
 userId               NUMERIC                        not null,
 catId                NUMERIC                        not null,
-apearTime            TIMESTAMP,
+appearTime            TIMESTAMP,
 primary key (placeId, userId, catId),
 foreign key (placeId)
       references Place (placeId),
@@ -136,21 +136,21 @@ foreign key (catId)
       references Cat (catId)
 );
 
-create unique index Apear_PK on Apear (
+create unique index Appear_PK on Appear (
 placeId ASC,
 userId ASC,
 catId ASC
 );
 
-create  index Apear_FK on Apear (
+create  index Appear_FK on Appear (
 placeId ASC
 );
 
-create  index Apear2_FK on Apear (
+create  index Appear2_FK on Appear (
 userId ASC
 );
 
-create  index Apear3_FK on Apear (
+create  index Appear3_FK on Appear (
 catId ASC
 );
 
@@ -190,7 +190,7 @@ create unique index Contact_PK on Contact (
 contactId ASC
 );
 
-create  index 用户_联系方式_FK on Contact (
+create  index 鐢ㄦ埛_鑱旂郴鏂瑰紡_FK on Contact (
 userId ASC
 );
 

@@ -14,6 +14,7 @@ use log::info;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
+    dotenv::dotenv().ok();
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "debug");
     }
