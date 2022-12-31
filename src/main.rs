@@ -2,7 +2,7 @@ mod db;
 
 use warp::Filter;
 use cats_api::*;
-use crate::db::db_conn;
+use crate::db::db_get_pool;
 use anyhow::Result;
 use log::info;
 
@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
     }
     env_logger::init();
     info!("school-cats backend!");
-    let pool = db_conn().await?;
+    let pool = db_get_pool().await?;
     info!("server running on http://127.0.0.1:{}/", PORT);
     let cors = warp::cors().allow_any_origin();
     let hello = warp::path!("hello" / String)

@@ -1,80 +1,80 @@
--- drop index Appear3_FK;
---
--- drop index Appear2_FK;
---
--- drop index Appear_FK;
---
--- drop index Appear_PK;
---
--- drop table Appear;
---
--- drop index Relationship_8_FK;
---
--- drop index Cat_PK;
---
--- drop table Cat;
---
--- drop index CatBreed_PK;
---
--- drop table CatBreed;
---
--- drop index Commit_PK;
---
--- drop table Commit;
---
--- drop index 用户_联系方式_FK;
---
--- drop index Contact_PK;
---
--- drop table Contact;
---
--- drop index Feed3_FK;
---
--- drop index Feed2_FK;
---
--- drop index Feed_FK;
---
--- drop index Feed_PK;
---
--- drop table Feed;
---
--- drop index Image_PK;
---
--- drop table Image;
---
--- drop index Place_PK;
---
--- drop table Place;
---
--- drop index Post5_FK;
---
--- drop index Post4_FK;
---
--- drop index Post3_FK;
---
--- drop index Post2_FK;
---
--- drop index Post_FK;
---
--- drop index Post_PK;
---
--- drop table Post;
---
--- drop index Treat3_FK;
---
--- drop index Treat2_FK;
---
--- drop index Treat_FK;
---
--- drop index Treat_PK;
---
--- drop table Treat;
---
--- drop index Relationship_9_FK;
---
--- drop index User_PK;
---
--- drop table "User";
+drop index Appear3_FK;
+
+drop index Appear2_FK;
+
+drop index Appear_FK;
+
+drop index Appear_PK;
+
+drop table Appear;
+
+drop index Relationship_8_FK;
+
+drop index Cat_PK;
+
+drop table Cat;
+
+drop index CatBreed_PK;
+
+drop table CatBreed;
+
+drop index Commit_PK;
+
+drop table Commit;
+
+drop index 用户_联系方式_FK;
+
+drop index Contact_PK;
+
+drop table Contact;
+
+drop index Feed3_FK;
+
+drop index Feed2_FK;
+
+drop index Feed_FK;
+
+drop index Feed_PK;
+
+drop table Feed;
+
+drop index Image_PK;
+
+drop table Image;
+
+drop index Place_PK;
+
+drop table Place;
+
+drop index Post5_FK;
+
+drop index Post4_FK;
+
+drop index Post3_FK;
+
+drop index Post2_FK;
+
+drop index Post_FK;
+
+drop index Post_PK;
+
+drop table Post;
+
+drop index Treat3_FK;
+
+drop index Treat2_FK;
+
+drop index Treat_FK;
+
+drop index Treat_PK;
+
+drop table Treat;
+
+drop index Relationship_9_FK;
+
+drop index User_PK;
+
+drop table "User";
 
 create table Place (
 placeId              NUMERIC                        not null,
