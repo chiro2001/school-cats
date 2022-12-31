@@ -1,3 +1,4 @@
+use std::time::SystemTime;
 use serde::*;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,6 +13,13 @@ pub fn jwt_secrets() -> String {
         Ok(v) => v,
         Err(_) => "secrets".to_string()
     }.as_str().to_string()
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct TokenDB {
+    pub token: String,
+    pub exp: SystemTime,
+    pub uid: u32,
 }
 
 #[cfg(test)]

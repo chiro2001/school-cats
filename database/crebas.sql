@@ -1,4 +1,4 @@
-drop table if exists Appear;
+﻿drop table if exists Appear;
 
 drop table if exists Cat;
 
@@ -15,6 +15,10 @@ drop table if exists Image;
 drop table if exists Place;
 
 drop table if exists Post;
+
+drop table if exists RefreshToken;
+
+drop table if exists Token;
 
 drop table if exists Treat;
 
@@ -63,7 +67,7 @@ create table Cat
    name                 varchar(32) not null,
    foundTime            date,
    source               varchar(32),
-   atSchool             smallint not null,
+   atSchool             bool not null,
    whereabouts          varchar(32),
    health               varchar(32),
    primary key (catId),
@@ -76,7 +80,7 @@ create table Appear
    placeId              numeric(8,0) not null,
    userId               numeric(8,0) not null,
    catId                numeric(8,0) not null,
-   appearTime           date,
+   appearTime           datetime,
    primary key (placeId, userId, catId),
    constraint FK_Appear foreign key (placeId)
       references Place (placeId) on delete restrict on update restrict,
@@ -109,7 +113,7 @@ create table Feed
    catId                numeric(8,0) not null,
    userId               numeric(8,0) not null,
    placeId              numeric(8,0) not null,
-   feedTime             date not null,
+   feedTime             datetime not null,
    feedFood             varchar(16),
    feedAmount           varchar(16),
    primary key (catId, userId, placeId),
@@ -129,7 +133,7 @@ create table Post
    placeId              numeric(8,0) not null,
    commentId            numeric(8,0) not null,
    postText             varchar(128),
-   postTime             date,
+   postTime             datetime,
    primary key (userId, catId, imageId, placeId, commentId),
    constraint FK_Post foreign key (userId)
       references User (userId) on delete restrict on update restrict,
@@ -143,13 +147,20 @@ create table Post
       references Commit (commentId) on delete restrict on update restrict
 );
 
+create table Token
+(
+   token                char(128) not null,
+   uid                  numeric(8,0) not null,
+   exp                  timestamp not null
+);
+
 create table Treat
 (
    placeId              numeric(8,0) not null,
    catId                numeric(8,0) not null,
    userId               numeric(8,0) not null,
    treatResults         varchar(128),
-   treatTime            date,
+   treatTime            datetime,
    primary key (placeId, catId, userId),
    constraint FK_Treat foreign key (placeId)
       references Place (placeId) on delete restrict on update restrict,

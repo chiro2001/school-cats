@@ -2,7 +2,7 @@ mod db;
 
 use warp::{Filter, http};
 use cats_api::*;
-use crate::db::db_get_pool;
+use crate::db::{Database, db_get_pool};
 use anyhow::Result;
 use log::info;
 use warp::http::Method;
@@ -16,7 +16,8 @@ async fn main() -> Result<()> {
     }
     env_logger::init();
     info!("school-cats backend!");
-    let _pool = db_get_pool().await?;
+    let pool = db_get_pool().await?;
+    let db = Database::new(pool);
     info!("server running on http://127.0.0.1:{}/", PORT);
     let cors = warp::cors().allow_any_origin().allow_methods(vec![
         Method::OPTIONS, Method::GET, Method::POST, Method::DELETE, Method::PUT,
@@ -29,16 +30,36 @@ async fn main() -> Result<()> {
     let hello = warp::get()
         .and(warp::path("hello"))
         .and(warp::path::param::<String>())
-        // .and(warp::body::content_length_limit(1024 * 16))
-        // .and(warp::body::json())
         .map(|name: String| warp::reply::json(
             &Response::ok(Hello { msg: name })
         ));
 
-    let user_get = warp::get()
+    let user_uid_get = warp::get()
         .and(warp::path("user"))
         .and(warp::path::param::<u32>())
         .map(|_uid| warp::reply::json(&Response::ok(User::default())));
+
+    let dbc = db.clone();
+    let user_get = warp::get()
+        .and(warp::path("user"))
+        .and(warp::header::<String>("token"))
+        .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
+            Ok(t) => {
+                Response::ok(User::default())
+            }
+            Err(_) => Response::ok(User::default())
+        }));
+
+    let dbc = db.clone();
+    let user_get2 = warp::get()
+        .and(warp::path("user"))
+        .and(warp::header::<String>("token"))
+        .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
+            Ok(t) => {
+                Response::ok(User::default())
+            }
+            Err(_) => Response::ok(User::default())
+        }));
 
     let login_post = warp::post()
         .and(warp::path("login"))
@@ -54,14 +75,11 @@ async fn main() -> Result<()> {
         index
             .or(hello)
             .or(user_get)
+            .or(user_get2)
+            .or(user_uid_get)
             .or(login_post)
             .or(register)
     ).with(cors);
-
-    // let get_user = warp::get()
-    //     .and(warp::path("user"))
-    //     .and(warp::path::end())
-    //     .and(json_body())
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
     Ok(())

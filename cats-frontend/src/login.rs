@@ -63,7 +63,6 @@ pub fn RegisterPage() -> Html {
                 let r: Response<Empty> = fetch(Method::POST, format!("{}/register", API).as_str(),
                                                RegisterPost {
                                                    user: User {
-                                                       token: "".to_string(),
                                                        username,
                                                        uid: 0,
                                                        usernick,

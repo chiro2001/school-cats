@@ -1,7 +1,10 @@
-use anyhow::Result;
+use std::sync::Arc;
+use std::time::SystemTime;
+use anyhow::{anyhow, Result};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
+use cats_api::jwt::TokenDB;
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
 
@@ -45,4 +48,37 @@ pub async fn db_get_pool() -> Result<Pool> {
         Err(_e) => {}
     };
     Ok(pool)
+}
+
+#[derive(Clone)]
+pub struct Database {
+    pub pool: Arc<Pool>,
+}
+
+impl Database {
+    pub fn new(pool: Pool) -> Self {
+        Self { pool: Arc::new(pool) }
+    }
+    pub fn conn(&self) -> Result<PooledConn> {
+        match self.pool.get_conn() {
+            Ok(conn) => Ok(conn),
+            Err(e) => Err(anyhow!("cannot get conn: {:?}", e))
+        }
+    }
+    pub fn token_check(&self, token: &str) -> Result<TokenDB> {
+        let mut conn = self.conn()?;
+        let r = conn.exec_first("SELECT token,uid FROM Token WHERE token = :token",
+                                params! { "token" => token })
+            .map(|row| {
+                row.map(|(token, uid)| TokenDB {
+                    token,
+                    exp: SystemTime::now(),
+                    uid,
+                })
+            })?;
+        match r {
+            Some(t) => Ok(t),
+            None => Err(anyhow!("no token found for {}", token))
+        }
+    }
 }
