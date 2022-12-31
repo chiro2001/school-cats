@@ -13,6 +13,8 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     let content = std::fs::read_to_string(SQL_FILE)?;
     let split = content.split(";").collect::<Vec<&str>>();
     let mut conn = pool.get_conn().unwrap().unwrap();
+    info!("SET FOREIGN_KEY_CHECKS=0;");
+    let _: Vec<String> = conn.exec("SET FOREIGN_KEY_CHECKS=0;", Params::Empty)?;
     for s in split {
         let t = s.trim();
         if t.is_empty() {
@@ -26,6 +28,8 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
         };
         info!("db: {:?}", r);
     }
+    info!("SET FOREIGN_KEY_CHECKS=1;");
+    let _: Vec<String> = conn.exec("SET FOREIGN_KEY_CHECKS=1;", Params::Empty)?;
     Ok(())
 }
 
