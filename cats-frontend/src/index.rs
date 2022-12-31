@@ -3,9 +3,9 @@
 use yew::prelude::*;
 use web_sys::HtmlTextAreaElement;
 use web_sys::console;
-use cats_api::user::User;
-use crate::login::LoginPage;
+use crate::routes::Route;
 use crate::user::load_user;
+use yew_router::prelude::*;
 
 #[function_component]
 fn CatsMap() -> Html {
@@ -80,7 +80,7 @@ pub fn IndexPage() -> Html {
             <Posts/>
         </>
     };
-    let login = html! { <LoginPage/> };
+    let login = html! { <Redirect<Route> to={Route::Login}/> };
     match &*user {
         Some(u) if u.username.is_empty() => login,
         _ => common

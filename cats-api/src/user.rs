@@ -20,3 +20,9 @@ pub struct LoginResponse {
     pub token: String,
     pub refresh_token: String,
 }
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone)]
+pub struct RegisterPost {
+    pub user: User,
+    pub password: String,
+}

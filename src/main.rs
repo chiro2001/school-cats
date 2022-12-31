@@ -6,7 +6,7 @@ use crate::db::db_get_pool;
 use anyhow::Result;
 use log::info;
 use warp::http::Method;
-use cats_api::user::{LoginPost, LoginResponse, User};
+use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -45,12 +45,17 @@ async fn main() -> Result<()> {
         .and(warp::body::json())
         .map(|r: LoginPost| warp::reply::json(&Response::ok(LoginResponse { token: r.username, refresh_token: "".to_string() })));
 
+    let register = warp::post()
+        .and(warp::path("register"))
+        .and(warp::body::json())
+        .map(|_r: RegisterPost| warp::reply::json(&Response::ok(Empty::default())));
 
     let routes = warp::any().and(
         index
             .or(hello)
             .or(user_get)
             .or(login_post)
+            .or(register)
     ).with(cors);
 
     // let get_user = warp::get()

@@ -10,10 +10,10 @@ pub struct Hello {
     pub msg: String,
 }
 
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Serialize, Default, Debug)]
 pub struct Empty;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Response<T> {
     pub code: usize,
     pub msg: String,
@@ -27,5 +27,11 @@ impl<T> Response<T> {
 
     pub fn ok(data: T) -> Self {
         Self::new(200, "ok", data)
+    }
+}
+
+impl Response<Empty> {
+    pub fn err() -> Self {
+        Self::new(400, "error", Empty::default())
     }
 }
