@@ -1,3 +1,5 @@
+extern crate core;
+
 use serde::{Serialize, Deserialize};
 
 pub mod user;
