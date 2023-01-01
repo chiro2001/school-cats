@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use std::sync::Arc;
 use std::time::SystemTime;
 use anyhow::{anyhow, Result};
@@ -5,6 +7,7 @@ use log::*;
 use mysql::*;
 use mysql::prelude::*;
 use cats_api::jwt::TokenDB;
+use cats_api::user::UserDB;
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
 
@@ -32,7 +35,10 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
         info!("db: {:?}", r);
     }
     info!("SET FOREIGN_KEY_CHECKS=1;");
-    let _: Vec<String> = conn.exec("SET FOREIGN_KEY_CHECKS=1;", Params::Empty)?;
+    conn.exec_drop("SET FOREIGN_KEY_CHECKS=1;", Params::Empty)?;
+    // insert default image
+    conn.query_drop("INSERT INTO Image (url) VALUES (\"https://yew.rs/img/logo.svg\")")?;
+    assert_eq!(1, conn.last_insert_id());
     Ok(())
 }
 
@@ -80,5 +86,34 @@ impl Database {
             Some(t) => Ok(t),
             None => Err(anyhow!("no token found for {}", token))
         }
+    }
+    pub fn user(&self, uid: u32) -> Result<UserDB> {
+        let mut conn = self.conn()?;
+        let r = conn.exec_first("SELECT userId,username,imageId,usernick,motto FROM User WHERE uid = :uid",
+                                params! { "uid" => uid })
+            .map(|row| {
+                row.map(|(userId, username, imageId, usernick, motto)| UserDB { userId, username, imageId, usernick, motto })
+            })?;
+        match r {
+            Some(t) => Ok(t),
+            None => Err(anyhow!("no uid found for {}", uid))
+        }
+    }
+    pub fn image_insert(&self, url: &str) -> Result<u32> {
+        let mut conn = self.conn()?;
+        conn.exec_drop("INSERT INTO Image (url) VALUES (:url);", params! { "url" => url })?;
+        Ok(conn.last_insert_id() as u32)
+    }
+    pub fn user_insert(&self, user: UserDB) -> Result<u32> {
+        let mut conn = self.conn()?;
+        conn.exec_drop("INSERT INTO User (username,imageId,usernick,motto) VALUES\
+        (:username,:imageId,:usernick,:motto);", params! {
+            "userId" => user.userId,
+            "username" => user.username,
+            "imageId" => user.imageId,
+            "usernick" => user.usernick,
+            "motto" => user.motto,
+        })?;
+        Ok(conn.last_insert_id() as u32)
     }
 }

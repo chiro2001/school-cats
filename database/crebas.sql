@@ -1,4 +1,4 @@
-锘縟rop table if exists Appear;
+drop table if exists Appear;
 
 drop table if exists Cat;
 
@@ -16,8 +16,6 @@ drop table if exists Place;
 
 drop table if exists Post;
 
-drop table if exists RefreshToken;
-
 drop table if exists Token;
 
 drop table if exists Treat;
@@ -33,7 +31,7 @@ create table Place
 
 create table Image
 (
-   imageId              numeric(8,0) not null,
+   imageId              numeric(8,0) not null auto_increment,
    url                  varchar(256) not null,
    primary key (imageId)
 );
@@ -104,7 +102,7 @@ create table Contact
    contactId            numeric(8,0) not null,
    userId               numeric(8,0) not null,
    primary key (contactId),
-   constraint FK_鐢ㄦ埛_鑱旂郴鏂瑰紡 foreign key (userId)
+   constraint FK_用户_联系方式 foreign key (userId)
       references User (userId) on delete restrict on update restrict
 );
 

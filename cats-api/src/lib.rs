@@ -28,6 +28,10 @@ impl<T> Response<T> {
     pub fn ok(data: T) -> Self {
         Self::new(200, "ok", data)
     }
+
+    pub fn error(msg: &str, data: T) -> Self {
+        Self::new(400, msg, data)
+    }
 }
 
 impl Response<Empty> {

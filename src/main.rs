@@ -45,18 +45,10 @@ async fn main() -> Result<()> {
         .and(warp::header::<String>("token"))
         .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
             Ok(t) => {
-                Response::ok(User::default())
-            }
-            Err(_) => Response::ok(User::default())
-        }));
-
-    let dbc = db.clone();
-    let user_get2 = warp::get()
-        .and(warp::path("user"))
-        .and(warp::header::<String>("token"))
-        .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
-            Ok(t) => {
-                Response::ok(User::default())
+                match dbc.user(t.uid) {
+                    Ok(u) => Response::ok(User::from(u)),
+                    Err(_) => Response::error("no such user", User::default())
+                }
             }
             Err(_) => Response::ok(User::default())
         }));
@@ -75,7 +67,6 @@ async fn main() -> Result<()> {
         index
             .or(hello)
             .or(user_get)
-            .or(user_get2)
             .or(user_uid_get)
             .or(login_post)
             .or(register)
