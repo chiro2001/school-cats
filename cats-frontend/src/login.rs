@@ -6,7 +6,7 @@ use yew_router::prelude::*;
 use gloo_net::http::Method;
 use cats_api::{Empty, Response};
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User};
-use crate::api::{API, fetch};
+use crate::api::{API, fetch, save_token};
 use crate::routes::Route;
 
 #[function_component]
@@ -21,13 +21,23 @@ pub fn LoginPage() -> Html {
             let passwd: String = passwd.cast::<HtmlInputElement>().unwrap().value().into();
             console::log_2(&"login username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
-                let r: LoginResponse = fetch(Method::POST, format!("{}/login", API).as_str(),
+                let r: Response<LoginResponse> = fetch(Method::POST, format!("{}/login", API).as_str(),
                                              LoginPost { username, passwd })
-                    .await.unwrap_or(LoginResponse::default());
+                    .await.unwrap_or(Response::error("error", LoginResponse::default()));
                 console::log_1(&format!("{:?}", r).into());
+                save_token(&r.data.token).unwrap();
+                save_token(&r.data.refresh_token).unwrap();
             });
         })
     };
+    let test_click = Callback::from(move |_| {
+        wasm_bindgen_futures::spawn_local(async move {
+            let r: Response<User> = fetch(Method::GET, format!("{}/user", API).as_str(),
+                                         Empty::default())
+                .await.unwrap_or(Response::error("error", User::default()));
+            console::log_1(&format!("{:?}", r).into());
+        });
+    });
     html! {
         <>
         <h2>{ "登录" }</h2>
@@ -35,6 +45,7 @@ pub fn LoginPage() -> Html {
         <p><span>{ "密码" }</span><input type="password" ref={password}/></p>
         <button {onclick}>{ "登录" }</button>
         <Link<Route> to={Route::Register}>{ "注册" }</Link<Route>>
+        <button onclick={test_click}>{ "get user" }</button>
         </>
     }
 }

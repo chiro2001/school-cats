@@ -92,7 +92,7 @@ impl Database {
     }
     pub fn token_check(&self, token: &str) -> Result<TokenDB> {
         let mut conn = self.conn()?;
-        let r = conn.exec_first("SELECT token,userId FROM Token WHERE token = :token",
+        let r = conn.exec_first("SELECT token,uid FROM Token WHERE token = :token",
                                 params! { "token" => token })
             .map(|row| {
                 row.map(|(token, uid)| TokenDB {
