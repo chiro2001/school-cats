@@ -83,6 +83,7 @@ pub fn IndexPage() -> Html {
     let login = html! { <Redirect<Route> to={Route::Login}/> };
     match &*user {
         Some(u) if u.username.is_empty() => login,
+        None => login,
         _ => common
     }
 }

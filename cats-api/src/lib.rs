@@ -34,6 +34,10 @@ impl<T> Response<T> {
     pub fn error(msg: &str, data: T) -> Self {
         Self::new(400, msg, data)
     }
+
+    pub fn default_error(data: T) -> Self {
+        Self::new(400, "error", data)
+    }
 }
 
 impl Response<Empty> {

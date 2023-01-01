@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
     let dbc = db.clone();
     let token_refresh = warp::get()
         .and(warp::path("refresh"))
-        .and(warp::header::<String>("token"))
+        .and(warp::header::<String>("refresh-token"))
         .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
             Ok(t) => {
                 match dbc.create_token(t.uid) {
