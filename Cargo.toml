@@ -17,6 +17,7 @@ log = "0.4.17"
 dotenv = "0.15.0"
 mysql = "23.0.1"
 encoding = "0.2.33"
+chrono = "0.4.23"
 
 [workspace]
 members = [

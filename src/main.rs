@@ -4,8 +4,9 @@ use warp::{Filter, http};
 use cats_api::*;
 use crate::db::{Database, db_get_pool};
 use anyhow::Result;
-use log::info;
+use log::{error, info};
 use warp::http::Method;
+use cats_api::jwt::TokenDB;
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User, UserDB};
 
 #[tokio::main(flavor = "current_thread")]
@@ -53,10 +54,67 @@ async fn main() -> Result<()> {
             Err(_) => Response::ok(User::default())
         }));
 
+    let dbc = db.clone();
     let login_post = warp::post()
         .and(warp::path("login"))
         .and(warp::body::json())
-        .map(|r: LoginPost| warp::reply::json(&Response::ok(LoginResponse { token: r.username, refresh_token: "".to_string() })));
+        // .map(|r: LoginPost| warp::reply::json(&Response::ok(LoginResponse { token: r.username, refresh_token: "".to_string() })));
+        // .map(move |r: LoginPost| warp::reply::json(&match dbc.user_check(&r.username, &r.passwd) {
+        //     Ok(uid) => {
+        //         let token = dbc.create_token(uid);
+        //         let refresh = dbc.create_refresh_token(uid);
+        //         match [token, refresh].map(|t| t.map(|t| t.0)).into_iter().collect::<Result<Vec<String>>>() {
+        //             Ok(r) => {
+        //                 Response::ok(LoginResponse {
+        //                     token: r.get(0).unwrap_or(&"".to_string()).clone(),
+        //                     refresh_token: r.get(1).unwrap_or(&"".to_string()).clone(),
+        //                 })
+        //             }
+        //             Err(e) => Response::error(&e.to_string(), LoginResponse::default())
+        //         }
+        //     }
+        //     Err(e) => Response::error(&e.to_string(), LoginResponse::default())
+        // }));
+        .map(move |r: LoginPost| warp::reply::json(&match dbc.user_check(&r.username, &r.passwd).map(|uid| {
+            let token = dbc.create_token(uid);
+            if token.is_err() {
+                error!("cannot create token!");
+            }
+            let refresh = dbc.create_refresh_token(uid);
+            if refresh.is_err() {
+                error!("cannot create refresh token!");
+            }
+            [token, refresh].map(|t| t.map(|t| t.0)).into_iter().collect::<Result<Vec<String>>>()
+        }) {
+            Ok(Ok(r)) => {
+                Response::ok(LoginResponse {
+                    token: r.get(0).unwrap_or(&"".to_string()).clone(),
+                    refresh_token: r.get(1).unwrap_or(&"".to_string()).clone(),
+                })
+            }
+            Err(e) => Response::error(&e.to_string(), LoginResponse::default()),
+            Ok(Err(e)) => Response::error(&e.to_string(), LoginResponse::default()),
+        }));
+
+    let dbc = db.clone();
+    let token_refresh = warp::get()
+        .and(warp::path("refresh"))
+        .and(warp::header::<String>("token"))
+        .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
+            Ok(t) => {
+                match dbc.create_token(t.uid) {
+                    Ok((new_token, exp)) => {
+                        Response::ok(TokenDB {
+                            token: new_token,
+                            exp,
+                            uid: t.uid,
+                        })
+                    }
+                    Err(e) => Response::error(&e.to_string(), TokenDB::default())
+                }
+            }
+            Err(e) => Response::error(&e.to_string(), TokenDB::default())
+        }));
 
     let dbc = db.clone();
     let register = warp::post()
@@ -74,6 +132,7 @@ async fn main() -> Result<()> {
             .or(user_uid_get)
             .or(login_post)
             .or(register)
+            .or(token_refresh)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;

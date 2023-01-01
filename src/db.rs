@@ -2,14 +2,16 @@
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::ops::Add;
 use std::sync::Arc;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, Utc};
 use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
-use cats_api::jwt::TokenDB;
+use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::user::UserDB;
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
@@ -52,6 +54,10 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     // insert default image
     conn.query_drop("INSERT INTO Image (url) VALUES (\"https://yew.rs/img/logo.svg\")")?;
     assert_eq!(1, conn.last_insert_id());
+    // insert default user
+    conn.exec_drop("INSERT INTO User (username,passwd,imageId,usernick,motto) VALUES (?,?,?,?,?);",
+                   ("", "", 1, "", "", ))?;
+    assert_eq!(1, conn.last_insert_id());
     Ok(())
 }
 
@@ -86,7 +92,7 @@ impl Database {
     }
     pub fn token_check(&self, token: &str) -> Result<TokenDB> {
         let mut conn = self.conn()?;
-        let r = conn.exec_first("SELECT token,uid FROM Token WHERE token = :token",
+        let r = conn.exec_first("SELECT token,userId FROM Token WHERE token = :token",
                                 params! { "token" => token })
             .map(|row| {
                 row.map(|(token, uid)| TokenDB {
@@ -100,13 +106,32 @@ impl Database {
             None => Err(anyhow!("no token found for {}", token))
         }
     }
-    pub fn create_token(&self, uid: u32, exp: SystemTime) -> Result<String> {
-
+    pub fn user_check(&self, username: &str, passwd: &str) -> Result<u32> {
+        let mut conn = self.conn()?;
+        let r: Option<u32> = conn.exec_first("SELECT userId FROM User WHERE username=? AND passwd=?", (username, passwd))?;
+        match r {
+            Some(uid) => Ok(uid),
+            None => Err(anyhow!("username or password error"))
+        }
     }
+    fn create_token_exp(&self, uid: u32, exp_secs: u64) -> Result<(String, SystemTime)> {
+        let exp = SystemTime::now().add(Duration::from_secs(exp_secs));
+        let token = jwt_encode(uid, exp)?;
+        // add token to database
+        let mut conn = self.conn()?;
+        let datetime: DateTime<Utc> = exp.into();
+        let duration = exp.duration_since(UNIX_EPOCH)?;
+        info!("create token with exp {:?}, {:?}", datetime, duration);
+        conn.exec_drop("INSERT INTO Token (token,exp,uid) VALUES (?,?,?)",
+                       (&token, duration, uid))?;
+        Ok((token, exp))
+    }
+    pub fn create_token(&self, uid: u32) -> Result<(String, SystemTime)> { self.create_token_exp(uid, EXP_TOKEN) }
+    pub fn create_refresh_token(&self, uid: u32) -> Result<(String, SystemTime)> { self.create_token_exp(uid, EXP_REFRESH) }
     pub fn user(&self, uid: u32) -> Result<UserDB> {
         let mut conn = self.conn()?;
-        let r = conn.exec_first("SELECT userId,username,imageId,usernick,motto FROM User WHERE uid = :uid",
-                                params! { "uid" => uid })
+        let r = conn.exec_first("SELECT userId,username,imageId,usernick,motto FROM User WHERE userId=?",
+                                (uid, ))
             .map(|row| {
                 row.map(|(userId, username, imageId, usernick, motto)| UserDB {
                     userId,

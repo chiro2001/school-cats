@@ -10,9 +10,9 @@ pub struct Claims {
 }
 
 /// normal token exp: 1h
-pub const EXP_TOKEN: u32 = 1 * 60 * 60;
+pub const EXP_TOKEN: u64 = 1 * 60 * 60;
 /// refresh token exp: 24h
-pub const EXP_REFRESH: u32 = 24 * 60 * 60;
+pub const EXP_REFRESH: u64 = 24 * 60 * 60;
 
 pub fn jwt_secrets() -> String {
     match std::env::var("JWT_SECRETS") {
@@ -21,10 +21,10 @@ pub fn jwt_secrets() -> String {
     }.as_str().to_string()
 }
 
-pub fn jwt_encode(uid: u32) -> Result<String> {
+pub fn jwt_encode(uid: u32, exp: SystemTime) -> Result<String> {
     match encode(&Header::default(), &Claims {
         uid,
-        exp: (SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 30) as usize,
+        exp: exp.duration_since(UNIX_EPOCH).unwrap().as_secs() as usize,
     }, &EncodingKey::from_secret(jwt_secrets().as_ref())) {
         Ok(t) => Ok(t),
         Err(e) => Err(anyhow!(e.to_string()))
@@ -43,6 +43,16 @@ pub struct TokenDB {
     pub token: String,
     pub exp: SystemTime,
     pub uid: u32,
+}
+
+impl Default for TokenDB {
+    fn default() -> Self {
+        Self {
+            token: "".to_string(),
+            exp: SystemTime::UNIX_EPOCH,
+            uid: 0,
+        }
+    }
 }
 
 #[cfg(test)]
