@@ -24,22 +24,22 @@ drop table if exists User;
 
 create table Place
 (
-   placeId              numeric(8,0) not null,
+   placeId              int not null auto_increment,
    details              varchar(32) not null,
    primary key (placeId)
 );
 
 create table Image
 (
-   imageId              numeric(8,0) not null auto_increment,
+   imageId              int not null auto_increment,
    url                  varchar(256) not null,
    primary key (imageId)
 );
 
 create table User
 (
-   userId               numeric(8,0) not null,
-   imageId              numeric(8,0),
+   userId               int not null auto_increment,
+   imageId              int,
    username             varchar(20) not null,
    passwd               char(64) not null,
    usernick             varchar(20) not null,
@@ -52,7 +52,7 @@ create table User
 
 create table CatBreed
 (
-   breedId              numeric(8,0) not null,
+   breedId              int not null auto_increment,
    breedName            varchar(10) not null,
    breedDesc            varchar(32),
    primary key (breedId)
@@ -60,8 +60,8 @@ create table CatBreed
 
 create table Cat
 (
-   catId                numeric(8,0) not null,
-   breedId              numeric(8,0),
+   catId                int not null auto_increment,
+   breedId              int,
    name                 varchar(32) not null,
    foundTime            date,
    source               varchar(32),
@@ -75,9 +75,9 @@ create table Cat
 
 create table Appear
 (
-   placeId              numeric(8,0) not null,
-   userId               numeric(8,0) not null,
-   catId                numeric(8,0) not null,
+   placeId              int not null,
+   userId               int not null,
+   catId                int not null,
    appearTime           datetime,
    primary key (placeId, userId, catId),
    constraint FK_Appear foreign key (placeId)
@@ -90,17 +90,17 @@ create table Appear
 
 create table Commit
 (
+   commentId            int not null auto_increment,
    commentText          varchar(128),
-   commentId            numeric(8,0) not null,
    primary key (commentId)
 );
 
 create table Contact
 (
+   contactId            int not null auto_increment,
+   userId               int not null,
    contactType          varchar(8) not null,
    contactContent       varchar(32) not null,
-   contactId            numeric(8,0) not null,
-   userId               numeric(8,0) not null,
    primary key (contactId),
    constraint FK_用户_联系方式 foreign key (userId)
       references User (userId) on delete restrict on update restrict
@@ -108,9 +108,9 @@ create table Contact
 
 create table Feed
 (
-   catId                numeric(8,0) not null,
-   userId               numeric(8,0) not null,
-   placeId              numeric(8,0) not null,
+   catId                int not null,
+   userId               int not null,
+   placeId              int not null,
    feedTime             datetime not null,
    feedFood             varchar(16),
    feedAmount           varchar(16),
@@ -125,11 +125,11 @@ create table Feed
 
 create table Post
 (
-   userId               numeric(8,0) not null,
-   catId                numeric(8,0) not null,
-   imageId              numeric(8,0) not null,
-   placeId              numeric(8,0) not null,
-   commentId            numeric(8,0) not null,
+   userId               int not null,
+   catId                int not null,
+   imageId              int not null,
+   placeId              int not null,
+   commentId            int not null,
    postText             varchar(128),
    postTime             datetime,
    primary key (userId, catId, imageId, placeId, commentId),
@@ -154,9 +154,9 @@ create table Token
 
 create table Treat
 (
-   placeId              numeric(8,0) not null,
-   catId                numeric(8,0) not null,
-   userId               numeric(8,0) not null,
+   placeId              int not null,
+   catId                int not null,
+   userId               int not null,
    treatResults         varchar(128),
    treatTime            datetime,
    primary key (placeId, catId, userId),
