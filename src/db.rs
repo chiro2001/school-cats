@@ -105,7 +105,14 @@ impl Database {
         let r = conn.exec_first("SELECT userId,username,imageId,usernick,motto FROM User WHERE uid = :uid",
                                 params! { "uid" => uid })
             .map(|row| {
-                row.map(|(userId, username, imageId, usernick, motto)| UserDB { userId, username, imageId, usernick, motto })
+                row.map(|(userId, username, imageId, usernick, motto)| UserDB {
+                    userId,
+                    username,
+                    imageId,
+                    usernick,
+                    motto,
+                    passwd: "".to_string(),
+                })
             })?;
         match r {
             Some(t) => Ok(t),
@@ -119,14 +126,21 @@ impl Database {
     }
     pub fn user_insert(&self, user: UserDB) -> Result<u32> {
         let mut conn = self.conn()?;
-        conn.exec_drop("INSERT INTO User (username,imageId,usernick,motto) VALUES\
-        (:username,:imageId,:usernick,:motto);", params! {
-            "userId" => user.userId,
-            "username" => user.username,
-            "imageId" => user.imageId,
-            "usernick" => user.usernick,
-            "motto" => user.motto,
-        })?;
+        // conn.exec_drop("INSERT INTO User (username,passwd,imageId,usernick,motto) VALUES (:username,:passwd,:imageId,:usernick,:motto);", params! {
+        //     "username" => user.username,
+        //     "passwd" => user.passwd,
+        //     "imageId" => user.imageId,
+        //     "usernick" => user.usernick,
+        //     "motto" => user.motto,
+        // })?;
+        info!("insert user: {:?}", user);
+        conn.exec_drop("INSERT INTO User (username,passwd,imageId,usernick,motto) VALUES (?,?,?,?,?);", (
+            user.username,
+            user.passwd,
+            user.imageId,
+            user.usernick,
+            user.motto
+        ))?;
         Ok(conn.last_insert_id() as u32)
     }
 }

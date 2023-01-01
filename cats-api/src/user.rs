@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     pub username: String,
     pub uid: u32,
+    pub head: u32,
     pub usernick: String,
     pub motto: String,
 }
@@ -14,6 +15,7 @@ pub struct User {
 pub struct UserDB {
     pub userId: u32,
     pub username: String,
+    pub passwd: String,
     pub imageId: u32,
     pub usernick: String,
     pub motto: String,
@@ -26,6 +28,26 @@ impl From<UserDB> for User {
             uid: u.userId,
             usernick: u.usernick,
             motto: u.motto,
+            head: u.imageId,
+        }
+    }
+}
+
+impl UserDB {
+    pub fn from_user(u: User, uid: u32, passwd: &str) -> Self {
+        Self {
+            userId: uid,
+            username: u.username,
+            imageId: u.head,
+            usernick: u.usernick,
+            motto: u.motto,
+            passwd: passwd.to_string(),
+        }
+    }
+    pub fn remove_passwd(self) -> Self {
+        Self {
+            passwd: "".to_string(),
+            ..self
         }
     }
 }
@@ -33,7 +55,7 @@ impl From<UserDB> for User {
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
 pub struct LoginPost {
     pub username: String,
-    pub password: String,
+    pub passwd: String,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
@@ -45,7 +67,7 @@ pub struct LoginResponse {
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]
 pub struct RegisterPost {
     pub user: User,
-    pub password: String,
+    pub passwd: String,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone)]

@@ -15,14 +15,14 @@ pub fn LoginPage() -> Html {
     let password = NodeRef::default();
     let onclick = {
         let username = username.clone();
-        let password = password.clone();
+        let passwd = password.clone();
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
-            let password: String = password.cast::<HtmlInputElement>().unwrap().value().into();
+            let passwd: String = passwd.cast::<HtmlInputElement>().unwrap().value().into();
             console::log_2(&"login username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
                 let r: LoginResponse = fetch(Method::POST, format!("{}/login", API).as_str(),
-                                             LoginPost { username, password })
+                                             LoginPost { username, passwd })
                     .await.unwrap_or(LoginResponse::default());
                 console::log_1(&format!("{:?}", r).into());
             });
@@ -48,13 +48,13 @@ pub fn RegisterPage() -> Html {
     let register_done = use_state(|| false);
     let onclick = {
         let username = username.clone();
-        let password = password.clone();
+        let passwd = password.clone();
         let usernick = usernick.clone();
         let motto = motto.clone();
         let register_done = register_done.clone();
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
-            let password: String = password.cast::<HtmlInputElement>().unwrap().value().into();
+            let passwd: String = passwd.cast::<HtmlInputElement>().unwrap().value().into();
             let usernick: String = usernick.cast::<HtmlInputElement>().unwrap().value().into();
             let motto: String = motto.cast::<HtmlInputElement>().unwrap().value().into();
             let register_done = register_done.clone();
@@ -65,10 +65,11 @@ pub fn RegisterPage() -> Html {
                                                    user: User {
                                                        username,
                                                        uid: 0,
+                                                       head: 1,
                                                        usernick,
                                                        motto,
                                                    },
-                                                   password,
+                                                   passwd,
                                                })
                     .await.unwrap_or(Response::err());
                 console::log_1(&format!("{:?}", r).into());
