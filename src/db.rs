@@ -19,13 +19,18 @@ pub fn sql_url() -> String {
 }
 
 pub async fn db_init(pool: &Pool) -> Result<()> {
-    let file = File::open(SQL_FILE)?;
-    let reader = BufReader::new(&file);
-    let queries = reader.split(b';').map(|q| q.unwrap());
-    let split = queries.map(|q| encoding::all::GBK.decode(&q, DecoderTrap::Strict).unwrap())
-        .collect::<Vec<String>>();
-    // let content = std::fs::read_to_string(SQL_FILE)?;
-    // let split = content.split(";").collect::<Vec<&str>>();
+    let content_utf8 = std::fs::read_to_string(SQL_FILE);
+    let split = match content_utf8 {
+        Ok(content) => content.split(";").map(|s| s.to_string()).collect::<Vec<String>>(),
+        Err(_) => {
+            warn!("retry reading using gbk");
+            let file = File::open(SQL_FILE)?;
+            let reader = BufReader::new(&file);
+            let queries = reader.split(b';').map(|q| q.unwrap());
+            queries.map(|q| encoding::all::GBK.decode(&q, DecoderTrap::Strict).unwrap())
+                .collect::<Vec<String>>()
+        }
+    };
     let mut conn = pool.get_conn().unwrap().unwrap();
     info!("SET FOREIGN_KEY_CHECKS=0;");
     let _: Vec<String> = conn.exec("SET FOREIGN_KEY_CHECKS=0;", Params::Empty)?;
