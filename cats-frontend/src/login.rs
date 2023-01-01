@@ -5,8 +5,9 @@ use yew::{Callback, function_component, Html, html, NodeRef, use_effect_with_dep
 use yew_router::prelude::*;
 use gloo_net::http::Method;
 use cats_api::{Empty, Response};
+use cats_api::jwt::TokenDB;
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User};
-use crate::api::{API, fetch, save_token};
+use crate::api::{API, fetch, fetch_refresh, save_token};
 use crate::routes::Route;
 
 #[function_component]
@@ -22,7 +23,7 @@ pub fn LoginPage() -> Html {
             console::log_2(&"login username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<LoginResponse> = fetch(Method::POST, format!("{}/login", API).as_str(),
-                                             LoginPost { username, passwd })
+                                                       LoginPost { username, passwd })
                     .await.unwrap_or(Response::error("error", LoginResponse::default()));
                 console::log_1(&format!("{:?}", r).into());
                 save_token(&r.data.token).unwrap();
@@ -33,8 +34,16 @@ pub fn LoginPage() -> Html {
     let test_click = Callback::from(move |_| {
         wasm_bindgen_futures::spawn_local(async move {
             let r: Response<User> = fetch(Method::GET, format!("{}/user", API).as_str(),
-                                         Empty::default())
+                                          Empty::default())
                 .await.unwrap_or(Response::error("error", User::default()));
+            console::log_1(&format!("{:?}", r).into());
+        });
+    });
+    let refresh_click = Callback::from(move |_| {
+        wasm_bindgen_futures::spawn_local(async move {
+            let r: Response<TokenDB> = fetch_refresh(Method::POST, format!("{}/refresh", API).as_str(),
+                                                     Empty::default(), true)
+                .await.unwrap_or(Response::error("error", TokenDB::default()));
             console::log_1(&format!("{:?}", r).into());
         });
     });
@@ -46,6 +55,7 @@ pub fn LoginPage() -> Html {
         <button {onclick}>{ "登录" }</button>
         <Link<Route> to={Route::Register}>{ "注册" }</Link<Route>>
         <button onclick={test_click}>{ "get user" }</button>
+        <button onclick={refresh_click}>{ "refresh" }</button>
         </>
     }
 }

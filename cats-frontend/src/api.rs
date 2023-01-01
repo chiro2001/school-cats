@@ -46,12 +46,17 @@ pub fn save_refresh_token(refresh_token: &str) -> Result<()> {
 //     pub data: T,
 // }
 
-pub async fn fetch<B: Serialize, T: for<'de> Deserialize<'de>>(method: Method, url: &str, body: B) -> Result<T> {
+pub async fn fetch_refresh<B: Serialize, T: for<'de> Deserialize<'de>>(method: Method, url: &str, body: B, refresh: bool) -> Result<T> {
     let tokens = load_tokens();
     let pre = Request::new(url)
         .method(method)
         .header("Content-Type", "application/json")
         .header("Token", &*tokens.0);
+    let pre = if refresh {
+        pre.header("Refresh-Token", &*tokens.1)
+    } else {
+        pre
+    };
     let pre = match method {
         Method::GET => pre,
         _ => pre.body(serde_json::to_string(&body)?)
@@ -64,4 +69,8 @@ pub async fn fetch<B: Serialize, T: for<'de> Deserialize<'de>>(method: Method, u
         },
         Err(e) => Err(anyhow!("request error: {:?}", e))
     }
+}
+
+pub async fn fetch<B: Serialize, T: for<'de> Deserialize<'de>>(method: Method, url: &str, body: B) -> Result<T> {
+    fetch_refresh(method, url, body, false).await
 }
