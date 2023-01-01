@@ -3,17 +3,17 @@ use std::fmt::{Display, Formatter};
 use web_sys::console;
 use cats_api::user::User;
 use crate::storage::{load_string, save_string, storage};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use gloo_net::http::Method;
 use cats_api::{Empty, Response};
 use cats_api::jwt::TokenDB;
-use crate::api::{API, fetch, fetch_refresh, save_refresh_token};
-use crate::user::TokenError::{RefreshTokenInvalid, TokenInvalid};
+use crate::api::{API, fetch, fetch_refresh, save_refresh_token, save_token};
+use crate::user::TokenError::RefreshTokenInvalid;
 
 #[derive(Debug)]
-enum TokenError {
+pub enum TokenError {
     RefreshTokenInvalid,
-    TokenInvalid,
+    // TokenInvalid,
 }
 
 impl Display for TokenError {
@@ -24,14 +24,10 @@ impl Display for TokenError {
 
 impl Error for TokenError {}
 
-async fn fetch_token(uid: u32) -> String {
-    "".to_string()
-}
-
 async fn fetch_refreshed_token(refresh_token: &str) -> Result<TokenDB, TokenError> {
-    save_refresh_token(refresh_token).map_err(|e| RefreshTokenInvalid)?;
+    save_refresh_token(refresh_token).map_err(|_| RefreshTokenInvalid)?;
     let r: Response<TokenDB> = fetch_refresh(Method::GET, &format!("{}/refresh", API), Empty::default(), true)
-        .await.map_err(|e| RefreshTokenInvalid)?;
+        .await.map_err(|_| RefreshTokenInvalid)?;
     match r.code {
         200 => Ok(r.data),
         _ => Err(RefreshTokenInvalid)
@@ -46,6 +42,7 @@ pub async fn load_token() -> Result<String, TokenError> {
         Ok(t) => t,
         Err(_) => fetch_refreshed_token(&refresh_token).await?.token
     };
+    save_token(&token).map_err(|_| RefreshTokenInvalid)?;
     Ok(token)
 }
 
@@ -59,12 +56,15 @@ pub async fn fetch_user() -> Result<User> {
 
 pub async fn load_user() -> Option<User> {
     console::log_1(&"loading user...".into());
-    let token = match load_token().await {
+    let _token = match load_token().await {
         Ok(token) => token,
-        Err(_) => return None,
+        Err(_) => {
+            console::log_1(&"no token".into());
+            return None;
+        }
     };
     let s = storage();
-    match s.get_item("user") {
+    let u = match s.get_item("user") {
         Ok(v) => match v {
             Some(v) if v.is_empty() => None,
             Some(v) => {
@@ -76,5 +76,16 @@ pub async fn load_user() -> Option<User> {
             None => None
         },
         Err(e) => panic!("get localStorage error! {:?}", e)
+    };
+    let u = match u {
+        Some(u) => Some(u),
+        None => match fetch_user().await {
+            Ok(u) => Some(u),
+            Err(_) => None
+        }
+    };
+    if u.is_some() {
+        save_user(u.as_ref().unwrap()).unwrap();
     }
+    u
 }

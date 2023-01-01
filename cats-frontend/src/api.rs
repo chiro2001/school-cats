@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::storage::{load_string, load_string_or, save_string, storage};
+use crate::storage::{load_string_or, save_string};
 use anyhow::{anyhow, Result};
 use gloo_net::http::{Method, Request};
 

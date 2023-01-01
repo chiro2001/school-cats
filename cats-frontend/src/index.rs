@@ -64,6 +64,7 @@ pub fn IndexPage() -> Html {
             let user = user.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let fetched_user = load_user().await;
+                console::log_1(&format!("fetched_user: {:?}", fetched_user).into());
                 user.set(fetched_user);
             });
         }, ());

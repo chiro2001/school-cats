@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
 
 use web_sys::{console, HtmlInputElement};
-use yew::{Callback, function_component, Html, html, NodeRef, use_effect_with_deps, use_state};
+use yew::{Callback, function_component, Html, html, NodeRef, use_state};
 use yew_router::prelude::*;
 use gloo_net::http::Method;
 use cats_api::{Empty, Response};
 use cats_api::jwt::TokenDB;
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User};
-use crate::api::{API, fetch, fetch_refresh, save_token};
+use crate::api::{API, fetch, fetch_refresh, save_refresh_token, save_token};
 use crate::routes::Route;
 
 #[function_component]
@@ -27,7 +27,7 @@ pub fn LoginPage() -> Html {
                     .await.unwrap_or(Response::error("error", LoginResponse::default()));
                 console::log_1(&format!("{:?}", r).into());
                 save_token(&r.data.token).unwrap();
-                save_token(&r.data.refresh_token).unwrap();
+                save_refresh_token(&r.data.refresh_token).unwrap();
             });
         })
     };
