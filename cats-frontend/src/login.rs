@@ -41,7 +41,7 @@ pub fn LoginPage() -> Html {
     });
     let refresh_click = Callback::from(move |_| {
         wasm_bindgen_futures::spawn_local(async move {
-            let r: Response<TokenDB> = fetch_refresh(Method::POST, format!("{}/refresh", API).as_str(),
+            let r: Response<TokenDB> = fetch_refresh(Method::GET, format!("{}/refresh", API).as_str(),
                                                      Empty::default(), true)
                 .await.unwrap_or(Response::error("error", TokenDB::default()));
             console::log_1(&format!("{:?}", r).into());
