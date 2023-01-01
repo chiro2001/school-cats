@@ -1,8 +1,11 @@
 #![allow(non_snake_case)]
 
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::sync::Arc;
 use std::time::SystemTime;
 use anyhow::{anyhow, Result};
+use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
@@ -16,8 +19,13 @@ pub fn sql_url() -> String {
 }
 
 pub async fn db_init(pool: &Pool) -> Result<()> {
-    let content = std::fs::read_to_string(SQL_FILE)?;
-    let split = content.split(";").collect::<Vec<&str>>();
+    let file = File::open(SQL_FILE)?;
+    let reader = BufReader::new(&file);
+    let queries = reader.split(b';').map(|q| q.unwrap());
+    let split = queries.map(|q| encoding::all::GBK.decode(&q, DecoderTrap::Strict).unwrap())
+        .collect::<Vec<String>>();
+    // let content = std::fs::read_to_string(SQL_FILE)?;
+    // let split = content.split(";").collect::<Vec<&str>>();
     let mut conn = pool.get_conn().unwrap().unwrap();
     info!("SET FOREIGN_KEY_CHECKS=0;");
     let _: Vec<String> = conn.exec("SET FOREIGN_KEY_CHECKS=0;", Params::Empty)?;
