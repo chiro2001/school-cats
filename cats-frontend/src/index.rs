@@ -59,15 +59,18 @@ fn Posts() -> Html {
 pub fn IndexPage() -> Html {
     let user = use_state(|| None);
     {
-        let user = user.clone();
-        use_effect_with_deps(move |_| {
-            let user = user.clone();
+        let user1 = user.clone();
+        // let user2 = user.clone();
+        // use_effect_with_deps(move |_| {
+        use_effect(move || {
+            let user = user1.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let fetched_user = load_user().await;
                 console::log_1(&format!("fetched_user: {:?}", fetched_user).into());
                 user.set(fetched_user);
             });
-        }, ());
+        // }, user2);
+        });
     };
     let common = html! {
         <>
@@ -83,7 +86,7 @@ pub fn IndexPage() -> Html {
     };
     let login = html! { <Redirect<Route> to={Route::Login}/> };
     match &*user {
-        Some(u) if u.username.is_empty() => login,
+        // Some(u) if u.username.is_empty() => login,
         None => login,
         _ => common
     }

@@ -9,17 +9,21 @@ use cats_api::jwt::TokenDB;
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User};
 use crate::api::{API, fetch, fetch_refresh, save_refresh_token, save_token};
 use crate::routes::Route;
+use crate::user::{fetch_user, save_user};
 
 #[function_component]
 pub fn LoginPage() -> Html {
     let username = NodeRef::default();
     let password = NodeRef::default();
+    let login_done = use_state(|| false);
     let onclick = {
         let username = username.clone();
         let passwd = password.clone();
+        let login_done = login_done.clone();
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
             let passwd: String = passwd.cast::<HtmlInputElement>().unwrap().value().into();
+            let login_done = login_done.clone();
             console::log_2(&"login username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<LoginResponse> = fetch(Method::POST, format!("{}/login", API).as_str(),
@@ -28,6 +32,14 @@ pub fn LoginPage() -> Html {
                 console::log_1(&format!("{:?}", r).into());
                 save_token(&r.data.token).unwrap();
                 save_refresh_token(&r.data.refresh_token).unwrap();
+                match fetch_user().await {
+                    Ok(u) => {
+                        console::log_1(&format!("login user: {:?}", u).into());
+                        save_user(&u).unwrap();
+                        login_done.set(true);
+                    },
+                    Err(e) => console::log_1(&format!("login failed: {:?}", e).into())
+                };
             });
         })
     };
@@ -47,16 +59,20 @@ pub fn LoginPage() -> Html {
             console::log_1(&format!("{:?}", r).into());
         });
     });
-    html! {
-        <>
-        <h2>{ "登录" }</h2>
-        <p><span>{ "用户名" }</span><input ref={username}/></p>
-        <p><span>{ "密码" }</span><input type="password" ref={password}/></p>
-        <button {onclick}>{ "登录" }</button>
-        <Link<Route> to={Route::Register}>{ "注册" }</Link<Route>>
-        <button onclick={test_click}>{ "get user" }</button>
-        <button onclick={refresh_click}>{ "refresh" }</button>
-        </>
+    if *login_done {
+        html! { <Redirect<Route> to={Route::Index}/> }
+    } else {
+        html! {
+            <>
+            <h2>{ "登录" }</h2>
+            <p><span>{ "用户名" }</span><input ref={username}/></p>
+            <p><span>{ "密码" }</span><input type="password" ref={password}/></p>
+            <button {onclick}>{ "登录" }</button>
+            <Link<Route> to={Route::Register}>{ "注册" }</Link<Route>>
+            <button onclick={test_click}>{ "get user" }</button>
+            <button onclick={refresh_click}>{ "refresh" }</button>
+            </>
+        }
     }
 }
 
@@ -81,17 +97,12 @@ pub fn RegisterPage() -> Html {
             let register_done = register_done.clone();
             console::log_2(&"register username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
-                let r: Response<Empty> = fetch(Method::POST, format!("{}/register", API).as_str(),
-                                               RegisterPost {
-                                                   user: User {
-                                                       username,
-                                                       uid: 0,
-                                                       head: 1,
-                                                       usernick,
-                                                       motto,
-                                                   },
-                                                   passwd,
-                                               })
+                let r: Response<Empty> = fetch(
+                    Method::POST, format!("{}/register", API).as_str(),
+                    RegisterPost {
+                        user: User { username, uid: 0, head: 1, usernick, motto },
+                        passwd,
+                    })
                     .await.unwrap_or(Response::err());
                 console::log_1(&format!("{:?}", r).into());
                 match r.code {

@@ -46,12 +46,13 @@ pub async fn load_token() -> Result<String, TokenError> {
     Ok(token)
 }
 
-fn save_user(u: &User) -> Result<()> {
+pub fn save_user(u: &User) -> Result<()> {
     save_string("user", &serde_json::to_string(u)?)
 }
 
 pub async fn fetch_user() -> Result<User> {
-    fetch(Method::GET, &format!("{}/user", API), Empty::default()).await
+    let r: Response<User> = fetch(Method::GET, &format!("{}/user", API), Empty::default()).await?;
+    Ok(r.data)
 }
 
 pub async fn load_user() -> Option<User> {
