@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 use gloo_net::http::Method;
+use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use web_sys::HtmlTextAreaElement;
 use web_sys::console;
@@ -25,9 +26,16 @@ fn CatsFeedings() -> Html {
     }
 }
 
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+struct PlaceItem {
+    pub id: u32,
+    pub details: String
+}
+
 #[function_component]
 fn Posts() -> Html {
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
+    let places: UseStateHandle<Vec<PlaceItem>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
     let push_image = {
         let images = images.clone();
@@ -45,10 +53,11 @@ fn Posts() -> Html {
         Callback::from(move |_| {
             let text: String = textarea.cast::<HtmlTextAreaElement>().unwrap().value();
             let images = images.to_vec();
+            let places = places.to_vec().into_iter().map(|i| i.id).collect::<Vec<u32>>();
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<Empty> = fetch(
                     Method::POST, format!("{}/post", API).as_str(),
-                    PostsPost { text, images })
+                    PostsPost { text, images, places })
                     .await.unwrap_or(Response::default_error(Empty::default()));
                 console::log_1(&format!("{:?}", r).into());
             });

@@ -100,7 +100,7 @@ pub fn RegisterPage() -> Html {
                 let r: Response<Empty> = fetch(
                     Method::POST, format!("{}/register", API).as_str(),
                     RegisterPost {
-                        user: User { username, uid: 0, head: 1, usernick, motto },
+                        user: User { username, uid: 0, head: "https://yew.rs/img/logo.png".to_string(), usernick, motto },
                         passwd,
                     })
                     .await.unwrap_or(Response::err());
