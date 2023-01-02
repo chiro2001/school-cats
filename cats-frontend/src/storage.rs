@@ -1,4 +1,4 @@
-use web_sys::Storage;
+use web_sys::{console, Storage};
 use anyhow::{Result, anyhow};
 
 pub fn storage() -> Storage {
@@ -24,6 +24,7 @@ pub fn load_string_or(key: &str, default: &str) -> String {
 }
 
 pub fn save_string(key: &str, value: &str) -> Result<()> {
+    console::log_1(&format!("saving string key:{}, value:{}", key, value).into());
     let s = storage();
     match s.set_item(key, value) {
         Ok(()) => Ok(()),

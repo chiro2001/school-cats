@@ -3,6 +3,7 @@ use yew_router::prelude::*;
 use crate::index::IndexPage;
 use crate::login::{LoginPage, RegisterPage};
 use crate::routes::Route;
+use crate::user::UserInfoComponent;
 
 fn switch(route: Route) -> Html {
     use Route::*;
@@ -20,6 +21,7 @@ fn switch(route: Route) -> Html {
 pub fn app() -> Html {
     html! {
         <main>
+            <UserInfoComponent/>
             <BrowserRouter>
                 <Switch<Route> render={switch}/>
             </BrowserRouter>
