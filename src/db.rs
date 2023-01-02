@@ -12,7 +12,7 @@ use log::*;
 use mysql::*;
 use mysql::prelude::*;
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
-use cats_api::posts::PostsPost;
+use cats_api::posts::{PostDisp, PostsDB, PostsPost};
 use cats_api::user::UserDB;
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
@@ -171,10 +171,31 @@ impl Database {
         ))?;
         Ok(conn.last_insert_id() as u32)
     }
-    pub fn post_insert(&self, post: PostsPost) -> Result<()> {
+    pub fn post_relative_insert(&self, p: PostsDB) -> Result<()> {
         let mut conn = self.conn()?;
-        info!("insert post: {:?}", post);
-        
+        conn.exec_drop("INSERT INTO Post (postId,userId,catId,imageId,placeId,commentId) VALUES (?,?,?,?,?,?)",
+                       (p.postId, p.userId, p.catId, p.placeId, p.commentId))?;
         Ok(())
     }
+    pub fn post_insert(&self, uid: u32, post: PostsPost) -> Result<u32> {
+        let mut conn = self.conn()?;
+        info!("insert post: {:?}", post);
+        // insert text
+        conn.exec_drop("INSERT INTO PostContent (postText, postTime) VALUES (?,?)",
+                       (post.text, SystemTime::now().duration_since(UNIX_EPOCH)?))?;
+        let id_post = conn.last_insert_id() as u32;
+        // insert images
+        for image in post.images {
+            let id_image = self.image_insert(&image)?;
+            self.post_relative_insert(PostsDB { userId: uid, imageId: id_image, ..PostsDB::default() })?;
+        }
+        // insert places
+        for place in post.places {
+            self.post_relative_insert(PostsDB { userId: uid, placeId: place, ..PostsDB::default() })?;
+        }
+        Ok(id_post)
+    }
+    // pub fn post_list(uid: u32) -> Result<Vec<PostDisp>> {
+    //
+    // }
 }

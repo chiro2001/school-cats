@@ -112,11 +112,22 @@ async fn main() -> Result<()> {
     let dbc = db.clone();
     let post_post = warp::post()
         .and(warp::path("post"))
+        .and(warp::header::<String>("token"))
         .and(warp::body::json())
-        .map(move |r: PostsPost| warp::reply::json(&match dbc.user_insert(UserDB::from_user(r.user, 0, &r.passwd)) {
-            Ok(_uid) => Response::ok(Empty::default()),
+        .map(move |token: String, r: PostsPost| warp::reply::json(&match dbc.token_check(&token) {
+            Ok(t) => {
+                match dbc.post_insert(t.uid, r) {
+                    Ok(_) => Response::ok(Empty::default()),
+                    Err(e) => Response::error(&e.to_string(), Empty::default())
+                }
+            }
             Err(e) => Response::error(&e.to_string(), Empty::default())
         }));
+
+    // let dbc = db.clone();
+    // let post_get = warp::get()
+    //     .and(warp::path("post"))
+    //     .map(move || warp::reply::json());
 
     let routes = warp::any().and(
         index
@@ -126,6 +137,7 @@ async fn main() -> Result<()> {
             .or(login_post)
             .or(register)
             .or(token_refresh)
+            .or(post_post)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
