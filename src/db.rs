@@ -11,6 +11,7 @@ use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
+use cats_api::cats::CatDB;
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::posts::{PostDisp, PostsDB, PostsPost};
 use cats_api::user::UserDB;
@@ -78,6 +79,11 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     assert_eq!(1, conn.last_insert_id());
     // insert default breed
     conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"\")")?;
+    assert_eq!(1, conn.last_insert_id());
+    // insert default cat
+    let cat = CatDB::default();
+    conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
+        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(1, conn.last_insert_id());
     Ok(())
 }
@@ -212,4 +218,10 @@ impl Database {
     // pub fn post_list(uid: u32) -> Result<Vec<PostDisp>> {
     //
     // }
+    pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
+        let mut conn = self.conn()?;
+        conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
+        VALUES (?,?,?,?,?,?,?", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
+        Ok(conn.last_insert_id() as u32)
+    }
 }
