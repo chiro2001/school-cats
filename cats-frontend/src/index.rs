@@ -58,19 +58,18 @@ fn Posts() -> Html {
 #[function_component]
 pub fn IndexPage() -> Html {
     let user = use_state(|| None);
+    let loading = use_state(|| true);
     {
-        let user1 = user.clone();
-        // let user2 = user.clone();
-        // use_effect_with_deps(move |_| {
-        use_effect(move || {
-            let user = user1.clone();
+        let user = user.clone();
+        let loading = loading.clone();
+        use_effect_with_deps(move |_| {
             wasm_bindgen_futures::spawn_local(async move {
                 let fetched_user = load_user().await;
                 console::log_1(&format!("fetched_user: {:?}", fetched_user).into());
                 user.set(fetched_user);
+                loading.set(false);
             });
-        // }, user2);
-        });
+        }, ());
     };
     let common = html! {
         <>
@@ -84,10 +83,18 @@ pub fn IndexPage() -> Html {
             <Posts/>
         </>
     };
+    console::log_1(&format!("effect user: {:?}", *user).into());
     let login = html! { <Redirect<Route> to={Route::Login}/> };
-    match &*user {
-        // Some(u) if u.username.is_empty() => login,
-        None => login,
-        _ => common
+    if *loading {
+        html! {
+            <>
+            <p>{ "loading" }</p>
+            </>
+        }
+    } else {
+        match &*user {
+            None => login,
+            _ => common
+        }
     }
 }
