@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     pub username: String,
     pub uid: u32,
-    pub head: u32,
+    pub head: String,
     pub usernick: String,
     pub motto: String,
 }
@@ -21,14 +21,14 @@ pub struct UserDB {
     pub motto: String,
 }
 
-impl From<UserDB> for User {
-    fn from(u: UserDB) -> Self {
+impl User {
+    pub fn from_db(u: UserDB, head: String) -> Self {
         Self {
             username: u.username,
             uid: u.userId,
             usernick: u.usernick,
             motto: u.motto,
-            head: u.imageId,
+            head,
         }
     }
 }
@@ -38,7 +38,8 @@ impl UserDB {
         Self {
             userId: uid,
             username: u.username,
-            imageId: u.head,
+            // todo: image id <= url
+            imageId: 1,
             usernick: u.usernick,
             motto: u.motto,
             passwd: passwd.to_string(),

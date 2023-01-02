@@ -48,8 +48,8 @@ async fn main() -> Result<()> {
         .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
             Ok(t) => {
                 match dbc.user(t.uid) {
-                    Ok(u) => Response::ok(User::from(u)),
-                    Err(_) => Response::error("no such user", User::default())
+                    Ok(u) => Response::ok(u),
+                    Err(e) => Response::error(&e.to_string(), User::default())
                 }
             }
             Err(e) => Response::error(&e.to_string(), User::default())

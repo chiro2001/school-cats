@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use crate::cats::CatDB;
 use crate::user::User;
@@ -11,14 +12,23 @@ pub struct PostsPost {
     pub places: Vec<u32>,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct PostsDB {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PostsContentDB {
     pub postId: u32,
     pub userId: u32,
-    pub catId: u32,
-    pub imageId: u32,
-    pub placeId: u32,
-    pub commentId: u32,
+    pub postTime: SystemTime,
+    pub postText: String,
+}
+
+impl Default for PostsContentDB {
+    fn default() -> Self {
+        Self {
+            postId: 0,
+            userId: 0,
+            postTime: UNIX_EPOCH,
+            postText: "".to_string(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]

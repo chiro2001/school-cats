@@ -4,8 +4,6 @@ drop table if exists Cat;
 
 drop table if exists CatBreed;
 
-drop table if exists CommentData;
-
 drop table if exists Contact;
 
 drop table if exists Feed;
@@ -14,9 +12,15 @@ drop table if exists Image;
 
 drop table if exists Place;
 
-drop table if exists Post;
+drop table if exists PostCat;
+
+drop table if exists PostComment;
 
 drop table if exists PostContent;
+
+drop table if exists PostImage;
+
+drop table if exists PostPlace;
 
 drop table if exists Token;
 
@@ -90,16 +94,6 @@ create table Appear
       references Cat (catId) on delete restrict on update restrict
 );
 
-create table CommentData
-(
-   commentId            int not null auto_increment,
-   userId               int not null,
-   commentText          varchar(128),
-   primary key (commentId),
-    constraint FK_CommentData foreign key (userId)
-       references User (userId) on delete restrict on update restrict
-);
-
 create table Contact
 (
    contactId            int not null auto_increment,
@@ -131,32 +125,57 @@ create table Feed
 create table PostContent
 (
    postId               int not null auto_increment,
+   userId               int,
    postTime             datetime not null,
-   postText             varchar(128) not null,
-   primary key (postId)
+   postText             varchar(128),
+   primary key (postId),
+   constraint FK_Relationship_4 foreign key (userId)
+      references User (userId) on delete restrict on update restrict
 );
 
-create table Post
+create table PostCat
 (
-   userId               int not null DEFAULT 1,
-   catId                int not null DEFAULT 1,
-   imageId              int not null DEFAULT 1,
-   placeId              int not null DEFAULT 1,
-   commentId            int not null DEFAULT 1,
-   postId               int not null DEFAULT 1,
-   primary key (userId, catId, imageId, placeId, commentId, postId),
-   constraint FK_Post foreign key (userId)
-      references User (userId) on delete restrict on update restrict,
-   constraint FK_Post2 foreign key (catId)
-      references Cat (catId) on delete restrict on update restrict,
-   constraint FK_Post3 foreign key (imageId)
-      references Image (imageId) on delete restrict on update restrict,
-   constraint FK_Post4 foreign key (placeId)
-      references Place (placeId) on delete restrict on update restrict,
-   constraint FK_Post5 foreign key (commentId)
-      references CommentData (commentId) on delete restrict on update restrict,
-   constraint FK_Post6 foreign key (postId)
-      references PostContent (postId) on delete restrict on update restrict
+   postId               int not null,
+   catId                int not null,
+   primary key (postId, catId),
+   constraint FK_PostCat foreign key (postId)
+      references PostContent (postId) on delete restrict on update restrict,
+   constraint FK_PostCat2 foreign key (catId)
+      references Cat (catId) on delete restrict on update restrict
+);
+
+create table PostComment
+(
+   postId               int not null,
+   userId               int not null,
+   commentText          varchar(128) not null,
+   primary key (postId, userId),
+   constraint FK_PostComment foreign key (postId)
+      references PostContent (postId) on delete restrict on update restrict,
+   constraint FK_PostComment2 foreign key (userId)
+      references User (userId) on delete restrict on update restrict
+);
+
+create table PostImage
+(
+   postId               int not null,
+   imageId              int not null,
+   primary key (postId, imageId),
+   constraint FK_PostImage foreign key (postId)
+      references PostContent (postId) on delete restrict on update restrict,
+   constraint FK_PostImage2 foreign key (imageId)
+      references Image (imageId) on delete restrict on update restrict
+);
+
+create table PostPlace
+(
+   postId               int not null,
+   placeId              int not null,
+   primary key (postId, placeId),
+   constraint FK_PostPlace foreign key (postId)
+      references PostContent (postId) on delete restrict on update restrict,
+   constraint FK_PostPlace2 foreign key (placeId)
+      references Place (placeId) on delete restrict on update restrict
 );
 
 create table Token

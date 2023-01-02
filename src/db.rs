@@ -13,8 +13,8 @@ use mysql::*;
 use mysql::prelude::*;
 use cats_api::cats::CatDB;
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
-use cats_api::posts::{PostDisp, PostsDB, PostsPost};
-use cats_api::user::UserDB;
+use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
+use cats_api::user::{User, UserDB};
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
 
@@ -91,23 +91,17 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(2, conn.last_insert_id());
-    // insert default comment
-    conn.exec_drop("INSERT INTO CommentData (userId,commentText) VALUES (?,?)", (1, "CommentText"))?;
-    assert_eq!(1, conn.last_insert_id());
     // insert test post
-    conn.exec_drop("INSERT INTO PostContent (postTime,postText) VALUES (?,?)",
-                   (SystemTime::now().duration_since(UNIX_EPOCH)?, "Text"))?;
+    conn.exec_drop("INSERT INTO PostContent (userId,postTime,postText) VALUES (?,?,?)",
+                   (1, SystemTime::now().duration_since(UNIX_EPOCH)?, "Text"))?;
     assert_eq!(1, conn.last_insert_id());
-    // conn.exec_drop("INSERT INTO Post (postId,userId,catId) VALUES (?,?,?)",
-    //                (1, 1, 1))?;
-    // conn.exec_drop("INSERT INTO Post (postId,placeId) VALUES (?,?)",
-    //                (1, 1))?;
-    conn.exec_drop("INSERT INTO Post (postId,placeId) VALUES (?,?)",
+    conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)",
                    (1, 2))?;
-    // conn.exec_drop("INSERT INTO Post (postId,catId) VALUES (?,?)",
-    //                (1, 1))?;
-    conn.exec_drop("INSERT INTO Post (postId,catId) VALUES (?,?)",
+    conn.exec_drop("INSERT INTO PostCat (postId,catId) VALUES (?,?)",
                    (1, 2))?;
+    // insert test comment
+    conn.exec_drop("INSERT INTO PostComment (postId,userId,commentText) VALUES (?,?,?)",
+                   (1, 1, "CommentText"))?;
     Ok(())
 }
 
@@ -178,23 +172,29 @@ impl Database {
     }
     pub fn create_token(&self, uid: u32) -> Result<(String, SystemTime)> { self.create_token_exp(uid, EXP_TOKEN) }
     pub fn create_refresh_token(&self, uid: u32) -> Result<(String, SystemTime)> { self.create_token_exp(uid, EXP_REFRESH) }
-    pub fn user(&self, uid: u32) -> Result<UserDB> {
+    pub fn user_db(&self, uid: u32) -> Result<UserDB> {
         let mut conn = self.conn()?;
         let r = conn.exec_first("SELECT userId,username,imageId,usernick,motto FROM User WHERE userId=?",
                                 (uid, ))
             .map(|row| {
-                row.map(|(userId, username, imageId, usernick, motto)| UserDB {
-                    userId,
-                    username,
-                    imageId,
-                    usernick,
-                    motto,
-                    passwd: "".to_string(),
-                })
+                row.map(|(userId, username, imageId, usernick, motto)| UserDB { userId, username, imageId, usernick, motto, passwd: "".to_string() })
             })?;
         match r {
             Some(t) => Ok(t),
             None => Err(anyhow!("no uid found for {}", uid))
+        }
+    }
+    pub fn user(&self, uid: u32) -> Result<User> {
+        let u = self.user_db(uid)?;
+        let head = self.user_head(uid)?;
+        Ok(User::from_db(u, head))
+    }
+    pub fn user_head(&self, uid: u32) -> Result<String> {
+        let mut conn = self.conn()?;
+        let r = conn.exec_first("SELECT Image.url FROM User JOIN Image WHERE User.userId=?", (uid, ))?;
+        match r {
+            Some(r) => Ok(r),
+            None => Err(anyhow!("not found"))
         }
     }
     pub fn image_insert(&self, url: &str) -> Result<u32> {
@@ -214,33 +214,57 @@ impl Database {
         ))?;
         Ok(conn.last_insert_id() as u32)
     }
-    pub fn post_relative_insert(&self, p: PostsDB) -> Result<()> {
-        let mut conn = self.conn()?;
-        conn.exec_drop("INSERT INTO Post (postId,userId,catId,imageId,placeId,commentId) VALUES (?,?,?,?,?,?)",
-                       (p.postId, p.userId, p.catId, p.placeId, p.commentId))?;
-        Ok(())
-    }
+    // pub fn post_relative_insert(&self, p: PostsDB) -> Result<()> {
+    //     let mut conn = self.conn()?;
+    //     conn.exec_drop("INSERT INTO Post (postId,userId,catId,imageId,placeId,commentId) VALUES (?,?,?,?,?,?)",
+    //                    (p.postId, p.userId, p.catId, p.placeId, p.commentId))?;
+    //     Ok(())
+    // }
     pub fn post_insert(&self, uid: u32, post: PostsPost) -> Result<u32> {
         let mut conn = self.conn()?;
         info!("insert post: {:?}", post);
         // insert text
-        conn.exec_drop("INSERT INTO PostContent (postText, postTime) VALUES (?,?)",
-                       (post.text, SystemTime::now().duration_since(UNIX_EPOCH)?))?;
+        conn.exec_drop("INSERT INTO PostContent (userId,postText,postTime) VALUES (?,?)",
+                       (uid, post.text, SystemTime::now().duration_since(UNIX_EPOCH)?))?;
         let id_post = conn.last_insert_id() as u32;
         // insert images
         for image in post.images {
             let id_image = self.image_insert(&image)?;
-            self.post_relative_insert(PostsDB { userId: uid, imageId: id_image, ..PostsDB::default() })?;
+            conn.exec_drop("INSERT INTO PostImage (postId,imageId) VALUES (?,?)", (id_post, id_image))?;
         }
         // insert places
         for place in post.places {
-            self.post_relative_insert(PostsDB { userId: uid, placeId: place, ..PostsDB::default() })?;
+            conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)", (id_post, place))?;
         }
         Ok(id_post)
     }
-    // pub fn post_list(uid: u32) -> Result<Vec<PostDisp>> {
-    //
-    // }
+    pub fn post_data(&self, id: u32) -> Result<PostDisp> {
+        let mut conn = self.conn()?;
+        let f = |(catId, breedId, name, foundTime, source, atSchool, whereabouts, health)|
+            CatDB { catId, breedId, name, foundTime: <SystemTime as Add<Duration>>::add(UNIX_EPOCH, foundTime), source, atSchool, whereabouts, health };
+        let cats = conn.exec_map("SELECT Cat.catId,Cat.breedId,Cat.name,Cat.foundTime,Cat.source,Cat.atSchool,Cat.whereabouts,Cat.health  \
+            FROM PostContent JOIN PostCat JOIN Cat WHERE PostContent.postId=?", (id, ), f)?;
+        #[allow(unused_parens)]
+        let f = |(x)| x;
+        let images: Vec<String> = conn.exec_map("SELECT Image.url \
+            FROM PostContent JOIN PostImage JOIN Image WHERE PostContent.postId=?", (id, ), f)?;
+        let places: Vec<String> = conn.exec_map("SELECT Place.details \
+            FROM PostContent JOIN PostPlace JOIN Place WHERE PostContent.postId=?", (id, ), f)?;
+        let f = |(text, uid, username, head, usernick, motto)| {
+            CommentDisp { text, user: User { username, uid, head, usernick, motto } }
+        };
+        let comments = conn.exec_map("SELECT PostComment.commentText,PostComment.userId,User.username,Image.url,User.usernick,User.motto \
+	        FROM PostContent JOIN PostComment JOIN User JOIN Image WHERE PostContent.postId=1;", (id, ), f)?;
+        let post = match conn.exec_first("SELECT postId,userId,postTime,postText FROM PostContent \
+            WHERE postId=?", (id, )).map(|row: Option<(u32, u32, Duration, String)>| {
+            row.map(|(postId, userId, postTime, postText)| PostsContentDB { postId, userId, postTime: UNIX_EPOCH.add(postTime), postText })
+        })? {
+            Some(p) => Ok(p),
+            None => Err(anyhow!("no post found"))
+        }?;
+        let user = self.user(post.userId)?;
+        Ok(PostDisp { postId: id, user, images, comments, places, cats })
+    }
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
         let mut conn = self.conn()?;
         conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
