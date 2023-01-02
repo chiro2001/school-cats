@@ -77,6 +77,8 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     // insert default place
     conn.query_drop("INSERT INTO Place (details) VALUES (\"未知\")")?;
     assert_eq!(1, conn.last_insert_id());
+    conn.query_drop("INSERT INTO Place (details) VALUES (\"未知2\")")?;
+    assert_eq!(2, conn.last_insert_id());
     // insert default breed
     conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"\")")?;
     assert_eq!(1, conn.last_insert_id());
@@ -85,10 +87,27 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(1, conn.last_insert_id());
+    let cat = CatDB::default();
+    conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
+        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
+    assert_eq!(2, conn.last_insert_id());
+    // insert default comment
+    conn.exec_drop("INSERT INTO CommentData (userId,commentText) VALUES (?,?)", (1, "CommentText"))?;
+    assert_eq!(1, conn.last_insert_id());
     // insert test post
     conn.exec_drop("INSERT INTO PostContent (postTime,postText) VALUES (?,?)",
                    (SystemTime::now().duration_since(UNIX_EPOCH)?, "Text"))?;
     assert_eq!(1, conn.last_insert_id());
+    // conn.exec_drop("INSERT INTO Post (postId,userId,catId) VALUES (?,?,?)",
+    //                (1, 1, 1))?;
+    // conn.exec_drop("INSERT INTO Post (postId,placeId) VALUES (?,?)",
+    //                (1, 1))?;
+    conn.exec_drop("INSERT INTO Post (postId,placeId) VALUES (?,?)",
+                   (1, 2))?;
+    // conn.exec_drop("INSERT INTO Post (postId,catId) VALUES (?,?)",
+    //                (1, 1))?;
+    conn.exec_drop("INSERT INTO Post (postId,catId) VALUES (?,?)",
+                   (1, 2))?;
     Ok(())
 }
 

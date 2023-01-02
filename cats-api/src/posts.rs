@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 use serde::{Deserialize, Serialize};
+use crate::cats::CatDB;
 use crate::user::User;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -40,4 +41,5 @@ pub struct PostDisp {
     pub images: Vec<String>,
     pub comments: Vec<CommentDisp>,
     pub places: Vec<String>,
+    pub cats: Vec<CatDB>,
 }

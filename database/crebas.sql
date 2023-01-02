@@ -4,7 +4,7 @@ drop table if exists Cat;
 
 drop table if exists CatBreed;
 
-drop table if exists Commit;
+drop table if exists CommentData;
 
 drop table if exists Contact;
 
@@ -90,13 +90,13 @@ create table Appear
       references Cat (catId) on delete restrict on update restrict
 );
 
-create table Commit
+create table CommentData
 (
    commentId            int not null auto_increment,
    userId               int not null,
    commentText          varchar(128),
    primary key (commentId),
-    constraint FK_Comment foreign key (userId)
+    constraint FK_CommentData foreign key (userId)
        references User (userId) on delete restrict on update restrict
 );
 
@@ -138,12 +138,12 @@ create table PostContent
 
 create table Post
 (
-   userId               int not null,
-   catId                int not null,
-   imageId              int not null,
-   placeId              int not null,
-   commentId            int not null,
-   postId               int not null,
+   userId               int not null DEFAULT 1,
+   catId                int not null DEFAULT 1,
+   imageId              int not null DEFAULT 1,
+   placeId              int not null DEFAULT 1,
+   commentId            int not null DEFAULT 1,
+   postId               int not null DEFAULT 1,
    primary key (userId, catId, imageId, placeId, commentId, postId),
    constraint FK_Post foreign key (userId)
       references User (userId) on delete restrict on update restrict,
@@ -154,7 +154,7 @@ create table Post
    constraint FK_Post4 foreign key (placeId)
       references Place (placeId) on delete restrict on update restrict,
    constraint FK_Post5 foreign key (commentId)
-      references Commit (commentId) on delete restrict on update restrict,
+      references CommentData (commentId) on delete restrict on update restrict,
    constraint FK_Post6 foreign key (postId)
       references PostContent (postId) on delete restrict on update restrict
 );
