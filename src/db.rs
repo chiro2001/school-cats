@@ -245,7 +245,7 @@ impl Database {
         let cats = conn.exec_map("SELECT Cat.catId,Cat.breedId,Cat.name,Cat.foundTime,Cat.source,Cat.atSchool,Cat.whereabouts,Cat.health  \
             FROM PostContent JOIN PostCat JOIN Cat WHERE PostContent.postId=?", (id, ), f)?;
         #[allow(unused_parens)]
-        let f = |(x)| x;
+            let f = |(x)| x;
         let images: Vec<String> = conn.exec_map("SELECT Image.url \
             FROM PostContent JOIN PostImage JOIN Image WHERE PostContent.postId=?", (id, ), f)?;
         let places: Vec<String> = conn.exec_map("SELECT Place.details \
@@ -264,6 +264,15 @@ impl Database {
         }?;
         let user = self.user(post.userId)?;
         Ok(PostDisp { postId: id, user, images, comments, places, cats })
+    }
+    pub fn post_list(&self) -> Result<Vec<PostDisp>> {
+        let mut conn = self.conn()?;
+        let post_ids: Vec<u32> = conn.query_map("SELECT postId FROM PostContent ORDER BY postId DESC", |i| i)?;
+        let posts = post_ids.into_iter().map(|id| self.post_data(id)).map(|x| match x {
+            Ok(x) => x,
+            Err(_) => PostDisp::default()
+        }).filter(|p| p.postId != 0).collect::<Vec<PostDisp>>();
+        Ok(posts)
     }
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
         let mut conn = self.conn()?;
