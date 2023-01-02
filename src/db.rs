@@ -6,7 +6,7 @@ use std::ops::Add;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
@@ -15,6 +15,7 @@ use cats_api::cats::CatDB;
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
 use cats_api::user::{User, UserDB};
+use crate::utils::chrono2sys;
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
 
@@ -93,7 +94,7 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     assert_eq!(2, conn.last_insert_id());
     // insert test post
     conn.exec_drop("INSERT INTO PostContent (userId,postTime,postText) VALUES (?,?,?)",
-                   (1, SystemTime::now().duration_since(UNIX_EPOCH)?, "Text"))?;
+                   (1, Utc::now().naive_utc(), "Text"))?;
     assert_eq!(1, conn.last_insert_id());
     conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)",
                    (1, 2))?;
@@ -164,10 +165,10 @@ impl Database {
         // add token to database
         let mut conn = self.conn()?;
         let datetime: DateTime<Utc> = exp.into();
-        let duration = exp.duration_since(UNIX_EPOCH)?;
-        info!("create token with exp {:?}, {:?}", datetime, duration);
+        let time = datetime.naive_utc();
+        info!("create token with exp {:?}, {:?}", datetime, time);
         conn.exec_drop("INSERT INTO Token (token,exp,uid) VALUES (?,?,?)",
-                       (&token, duration, uid))?;
+                       (&token, time, uid))?;
         Ok((token, exp))
     }
     pub fn create_token(&self, uid: u32) -> Result<(String, SystemTime)> { self.create_token_exp(uid, EXP_TOKEN) }
@@ -225,7 +226,7 @@ impl Database {
         info!("insert post: {:?}", post);
         // insert text
         conn.exec_drop("INSERT INTO PostContent (userId,postText,postTime) VALUES (?,?,?)",
-                       (uid, post.text, SystemTime::now().duration_since(UNIX_EPOCH)?))?;
+                       (uid, post.text, Utc::now().naive_utc()))?;
         let id_post = conn.last_insert_id() as u32;
         // insert images
         for image in post.images {
@@ -240,28 +241,33 @@ impl Database {
     }
     pub fn post_data(&self, id: u32) -> Result<PostDisp> {
         let mut conn = self.conn()?;
-        let f = |(catId, breedId, name, foundTime, source, atSchool, whereabouts, health)|
-            CatDB { catId, breedId, name, foundTime: <SystemTime as Add<Duration>>::add(UNIX_EPOCH, foundTime), source, atSchool, whereabouts, health };
+        let f: fn((u32, u32, String, NaiveDateTime, String, bool, String, String)) -> CatDB = |(catId, breedId, name, foundTime, source, atSchool, whereabouts, health)|
+            CatDB { catId, breedId, name, foundTime: chrono2sys(foundTime), source, atSchool, whereabouts, health };
         let cats = conn.exec_map("SELECT Cat.catId,Cat.breedId,Cat.name,Cat.foundTime,Cat.source,Cat.atSchool,Cat.whereabouts,Cat.health  \
             FROM PostContent JOIN PostCat JOIN Cat WHERE PostContent.postId=?", (id, ), f)?;
+        info!("[{}] cats: {:?}", id, cats);
         #[allow(unused_parens)]
             let f = |(x)| x;
         let images: Vec<String> = conn.exec_map("SELECT Image.url \
             FROM PostContent JOIN PostImage JOIN Image WHERE PostContent.postId=?", (id, ), f)?;
+        info!("[{}] images: {:?}", id, images);
         let places: Vec<String> = conn.exec_map("SELECT Place.details \
             FROM PostContent JOIN PostPlace JOIN Place WHERE PostContent.postId=?", (id, ), f)?;
+        info!("[{}] places: {:?}", id, places);
         let f = |(text, uid, username, head, usernick, motto)| {
             CommentDisp { text, user: User { username, uid, head, usernick, motto } }
         };
         let comments = conn.exec_map("SELECT PostComment.commentText,PostComment.userId,User.username,Image.url,User.usernick,User.motto \
-	        FROM PostContent JOIN PostComment JOIN User JOIN Image WHERE PostContent.postId=1;", (id, ), f)?;
+	        FROM PostContent JOIN PostComment JOIN User JOIN Image WHERE PostContent.postId=?", (id, ), f)?;
+        info!("[{}] comments: {:?}", id, comments);
         let post = match conn.exec_first("SELECT postId,userId,postTime,postText FROM PostContent \
-            WHERE postId=?", (id, )).map(|row: Option<(u32, u32, Duration, String)>| {
-            row.map(|(postId, userId, postTime, postText)| PostsContentDB { postId, userId, postTime: UNIX_EPOCH.add(postTime), postText })
+            WHERE postId=?", (id, )).map(|row: Option<(u32, u32, NaiveDateTime, String)>| {
+            row.map(|(postId, userId, postTime, postText)| PostsContentDB { postId, userId, postTime: chrono2sys(postTime), postText })
         })? {
             Some(p) => Ok(p),
             None => Err(anyhow!("no post found"))
         }?;
+        info!("[{}] post: {:?}", id, post);
         let user = self.user(post.userId)?;
         Ok(PostDisp { postId: id, user, images, comments, places, cats })
     }
@@ -270,8 +276,12 @@ impl Database {
         let post_ids: Vec<u32> = conn.query_map("SELECT postId FROM PostContent ORDER BY postId DESC", |i| i)?;
         let posts = post_ids.into_iter().map(|id| self.post_data(id)).map(|x| match x {
             Ok(x) => x,
-            Err(_) => PostDisp::default()
+            Err(e) => {
+                error!("{:?}", e);
+                PostDisp::default()
+            }
         }).filter(|p| p.postId != 0).collect::<Vec<PostDisp>>();
+        info!("post_list: {:?}", posts);
         Ok(posts)
     }
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {

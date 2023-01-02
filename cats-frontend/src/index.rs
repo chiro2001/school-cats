@@ -9,7 +9,7 @@ use crate::routes::Route;
 use crate::user::load_user;
 use yew_router::prelude::*;
 use cats_api::{Empty, Response};
-use cats_api::posts::PostsPost;
+use cats_api::posts::{PostDisp, PostsPost};
 use crate::api::{API, fetch};
 
 #[function_component]
@@ -34,6 +34,7 @@ struct PlaceItem {
 
 #[function_component]
 fn Posts() -> Html {
+    let posts: UseStateHandle<Vec<PostDisp>> = use_state(|| vec![]);
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
     let places: UseStateHandle<Vec<PlaceItem>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
@@ -62,6 +63,18 @@ fn Posts() -> Html {
                 console::log_1(&format!("{:?}", r).into());
             });
         })
+    };
+    {
+        let posts = posts.clone();
+        use_effect_with_deps(move |_| {
+            wasm_bindgen_futures::spawn_local(async move {
+                let r: Response<Vec<PostDisp>> = fetch(
+                    Method::GET, format!("{}/post", API).as_str(),
+                    Empty::default()
+                ).await.unwrap_or(Response::default_error(vec![]));
+                posts.set(r.data);
+            });
+        }, ());
     };
     html! {
     <>
