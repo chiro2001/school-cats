@@ -192,7 +192,8 @@ impl Database {
     }
     pub fn user_head(&self, uid: u32) -> Result<String> {
         let mut conn = self.conn()?;
-        let r = conn.exec_first("SELECT Image.url FROM User JOIN Image WHERE User.userId=?", (uid, ))?;
+        let r = conn.exec_first("SELECT Image.url FROM User \
+            JOIN Image ON Image.imageId=User.imageId WHERE User.userId=?", (uid, ))?;
         match r {
             Some(r) => Ok(r),
             None => Err(anyhow!("not found"))
@@ -244,21 +245,26 @@ impl Database {
         let f: fn((u32, u32, String, NaiveDateTime, String, bool, String, String)) -> CatDB = |(catId, breedId, name, foundTime, source, atSchool, whereabouts, health)|
             CatDB { catId, breedId, name, foundTime: chrono2sys(foundTime), source, atSchool, whereabouts, health };
         let cats = conn.exec_map("SELECT Cat.catId,Cat.breedId,Cat.name,Cat.foundTime,Cat.source,Cat.atSchool,Cat.whereabouts,Cat.health  \
-            FROM PostContent JOIN PostCat JOIN Cat WHERE PostContent.postId=?", (id, ), f)?;
+            FROM PostContent JOIN PostCat ON PostContent.postId=PostCat.postId \
+            JOIN Cat ON PostCat.catId=Cat.catId WHERE PostContent.postId=?", (id, ), f)?;
         info!("[{}] cats: {:?}", id, cats);
         #[allow(unused_parens)]
             let f = |(x)| x;
         let images: Vec<String> = conn.exec_map("SELECT Image.url \
-            FROM PostContent JOIN PostImage JOIN Image WHERE PostContent.postId=?", (id, ), f)?;
+            FROM PostContent JOIN PostImage ON PostContent.postId=PostImage.postId \
+            JOIN Image ON Image.imageId=PostImage.imageId WHERE PostContent.postId=?", (id, ), f)?;
         info!("[{}] images: {:?}", id, images);
         let places: Vec<String> = conn.exec_map("SELECT Place.details \
-            FROM PostContent JOIN PostPlace JOIN Place WHERE PostContent.postId=?", (id, ), f)?;
+            FROM PostContent JOIN PostPlace ON PostContent.postId=PostPlace.postId \
+            JOIN Place ON PostPlace.placeId=Place.placeId WHERE PostContent.postId=?", (id, ), f)?;
         info!("[{}] places: {:?}", id, places);
         let f = |(text, uid, username, head, usernick, motto)| {
             CommentDisp { text, user: User { username, uid, head, usernick, motto } }
         };
         let comments = conn.exec_map("SELECT PostComment.commentText,PostComment.userId,User.username,Image.url,User.usernick,User.motto \
-	        FROM PostContent JOIN PostComment JOIN User JOIN Image WHERE PostContent.postId=?", (id, ), f)?;
+	        FROM PostContent JOIN PostComment ON PostContent.postId=PostComment.postId \
+	        JOIN User ON PostComment.postId=User.userId \
+	        JOIN Image ON User.imageId=Image.imageId WHERE PostContent.postId=?", (id, ), f)?;
         info!("[{}] comments: {:?}", id, comments);
         let post = match conn.exec_first("SELECT postId,userId,postTime,postText FROM PostContent \
             WHERE postId=?", (id, )).map(|row: Option<(u32, u32, NaiveDateTime, String)>| {
