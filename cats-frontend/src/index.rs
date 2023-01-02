@@ -1,11 +1,15 @@
 #![allow(non_snake_case)]
 
+use gloo_net::http::Method;
 use yew::prelude::*;
 use web_sys::HtmlTextAreaElement;
 use web_sys::console;
 use crate::routes::Route;
 use crate::user::load_user;
 use yew_router::prelude::*;
+use cats_api::{Empty, Response};
+use cats_api::posts::PostsPost;
+use crate::api::{API, fetch};
 
 #[function_component]
 fn CatsMap() -> Html {
@@ -25,7 +29,7 @@ fn CatsFeedings() -> Html {
 fn Posts() -> Html {
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
-    let onclick = {
+    let push_image = {
         let images = images.clone();
         let textarea = textarea.clone();
         Callback::from(move |_| {
@@ -35,6 +39,21 @@ fn Posts() -> Html {
             images.set(imgs);
         })
     };
+    let post = {
+        let images = images.clone();
+        let textarea = textarea.clone();
+        Callback::from(move |_| {
+            let text: String = textarea.cast::<HtmlTextAreaElement>().unwrap().value();
+            let images = images.to_vec();
+            wasm_bindgen_futures::spawn_local(async move {
+                let r: Response<Empty> = fetch(
+                    Method::POST, format!("{}/post", API).as_str(),
+                    PostsPost { text, images })
+                    .await.unwrap_or(Response::default_error(Empty::default()));
+                console::log_1(&format!("{:?}", r).into());
+            });
+        })
+    };
     html! {
     <>
         <h2>{ "猫猫贴" }</h2>
@@ -42,13 +61,13 @@ fn Posts() -> Html {
         <div>
             <span>
                 <p>{ "正文" }</p>
-                // <textarea {oninput}/>
                 <textarea ref={textarea}/>
                 <p>{ "猫猫图" }</p>
                 <ul>
                     { for images.iter().map(|i: &String| html! {<img src={i.clone()}/>}) }
                 </ul>
-                <button {onclick}>{ "添加图片" }</button>
+                <button onclick={push_image}>{ "添加图片" }</button>
+                <button onclick={post}>{ "发布猫猫贴" }</button>
             </span>
         </div>
     </>

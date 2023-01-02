@@ -7,6 +7,7 @@ use anyhow::Result;
 use log::{error, info};
 use warp::http::Method;
 use cats_api::jwt::TokenDB;
+use cats_api::posts::PostsPost;
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User, UserDB};
 
 #[tokio::main(flavor = "current_thread")]
@@ -104,6 +105,15 @@ async fn main() -> Result<()> {
         .and(warp::path("register"))
         .and(warp::body::json())
         .map(move |r: RegisterPost| warp::reply::json(&match dbc.user_insert(UserDB::from_user(r.user, 0, &r.passwd)) {
+            Ok(_uid) => Response::ok(Empty::default()),
+            Err(e) => Response::error(&e.to_string(), Empty::default())
+        }));
+
+    let dbc = db.clone();
+    let post_post = warp::post()
+        .and(warp::path("post"))
+        .and(warp::body::json())
+        .map(move |r: PostsPost| warp::reply::json(&match dbc.user_insert(UserDB::from_user(r.user, 0, &r.passwd)) {
             Ok(_uid) => Response::ok(Empty::default()),
             Err(e) => Response::error(&e.to_string(), Empty::default())
         }));

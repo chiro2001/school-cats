@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 
 pub mod user;
 pub mod jwt;
+pub mod posts;
 
 pub const PORT: u16 = 3030;
 

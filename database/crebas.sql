@@ -16,6 +16,8 @@ drop table if exists Place;
 
 drop table if exists Post;
 
+drop table if exists PostContent;
+
 drop table if exists Token;
 
 drop table if exists Treat;
@@ -123,6 +125,13 @@ create table Feed
       references Place (placeId) on delete restrict on update restrict
 );
 
+create table PostContent
+(
+   postId               int not null,
+   postTime             datetime not null,
+   primary key (postId)
+);
+
 create table Post
 (
    userId               int not null,
@@ -130,9 +139,8 @@ create table Post
    imageId              int not null,
    placeId              int not null,
    commentId            int not null,
-   postText             varchar(128),
-   postTime             datetime,
-   primary key (userId, catId, imageId, placeId, commentId),
+   postId               int not null,
+   primary key (userId, catId, imageId, placeId, commentId, postId),
    constraint FK_Post foreign key (userId)
       references User (userId) on delete restrict on update restrict,
    constraint FK_Post2 foreign key (catId)
@@ -142,7 +150,9 @@ create table Post
    constraint FK_Post4 foreign key (placeId)
       references Place (placeId) on delete restrict on update restrict,
    constraint FK_Post5 foreign key (commentId)
-      references Commit (commentId) on delete restrict on update restrict
+      references Commit (commentId) on delete restrict on update restrict,
+   constraint FK_Post6 foreign key (postId)
+      references PostContent (postId) on delete restrict on update restrict
 );
 
 create table Token

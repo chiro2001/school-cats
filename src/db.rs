@@ -12,6 +12,7 @@ use log::*;
 use mysql::*;
 use mysql::prelude::*;
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
+use cats_api::posts::PostsPost;
 use cats_api::user::UserDB;
 
 pub const SQL_FILE: &'static str = "database/crebas.sql";
@@ -57,6 +58,12 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     // insert default user
     conn.exec_drop("INSERT INTO User (username,passwd,imageId,usernick,motto) VALUES (?,?,?,?,?);",
                    ("", "", 1, "", "", ))?;
+    assert_eq!(1, conn.last_insert_id());
+    // insert default place
+    conn.query_drop("INSERT INTO Place (details) VALUES (\"未知\")")?;
+    assert_eq!(1, conn.last_insert_id());
+    // insert default breed
+    conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"\")")?;
     assert_eq!(1, conn.last_insert_id());
     Ok(())
 }
@@ -163,5 +170,11 @@ impl Database {
             user.motto
         ))?;
         Ok(conn.last_insert_id() as u32)
+    }
+    pub fn post_insert(&self, post: PostsPost) -> Result<()> {
+        let mut conn = self.conn()?;
+        info!("insert post: {:?}", post);
+        
+        Ok(())
     }
 }
