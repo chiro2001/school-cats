@@ -95,8 +95,8 @@ create table Commit
    commentId            int not null auto_increment,
    userId               int not null,
    commentText          varchar(128),
-   primary key (commentId)
-       constraint FK_Comment foreign key (userId)
+   primary key (commentId),
+    constraint FK_Comment foreign key (userId)
        references User (userId) on delete restrict on update restrict
 );
 

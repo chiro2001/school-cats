@@ -44,11 +44,25 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
         }
         let exec = format!("{};", t);
         info!("exec: {}", exec);
-        let r: Vec<String> = match conn.exec(exec, Params::Empty) {
-            Ok(r) => r,
-            Err(e) => vec![format!("{:?}", e)],
+        let r: Result<Vec<String>> = match conn.exec(exec, Params::Empty) {
+            Ok(r) => Ok(r),
+            Err(e) => Err(anyhow!("{:?}", e)),
         };
-        info!("db: {:?}", r);
+        match std::env::var("IGNORE_INIT_ERRORS") {
+            Ok(s) => match s.as_str() {
+                "1" => {}
+                _ => {
+                    match r {
+                        Ok(_) => {}
+                        Err(e) => {
+                            error!("{:?}", e);
+                            return Err(e);
+                        }
+                    };
+                }
+            }
+            Err(_e) => {}
+        };
     }
     info!("SET FOREIGN_KEY_CHECKS=1;");
     conn.exec_drop("SET FOREIGN_KEY_CHECKS=1;", Params::Empty)?;
