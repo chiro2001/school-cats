@@ -85,6 +85,10 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(1, conn.last_insert_id());
+    // insert test post
+    conn.exec_drop("INSERT INTO PostContent (postTime,postText) VALUES (?,?)",
+                   (SystemTime::now().duration_since(UNIX_EPOCH)?, "Text"))?;
+    assert_eq!(1, conn.last_insert_id());
     Ok(())
 }
 

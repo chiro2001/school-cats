@@ -130,7 +130,7 @@ create table Feed
 
 create table PostContent
 (
-   postId               int not null,
+   postId               int not null auto_increment,
    postTime             datetime not null,
    postText             varchar(128) not null,
    primary key (postId)
