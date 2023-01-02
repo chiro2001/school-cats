@@ -224,7 +224,7 @@ impl Database {
         let mut conn = self.conn()?;
         info!("insert post: {:?}", post);
         // insert text
-        conn.exec_drop("INSERT INTO PostContent (userId,postText,postTime) VALUES (?,?)",
+        conn.exec_drop("INSERT INTO PostContent (userId,postText,postTime) VALUES (?,?,?)",
                        (uid, post.text, SystemTime::now().duration_since(UNIX_EPOCH)?))?;
         let id_post = conn.last_insert_id() as u32;
         // insert images
