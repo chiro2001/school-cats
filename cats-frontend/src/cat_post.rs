@@ -21,6 +21,7 @@ pub fn Posts() -> Html {
     let posts: UseStateHandle<Vec<PostDisp>> = use_state(|| vec![]);
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
     let places: UseStateHandle<Vec<PlaceDB>> = use_state(|| vec![]);
+    let cats_selected: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
     let places_selected: UseStateHandle<Vec<PlaceDB>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
     {
@@ -48,14 +49,16 @@ pub fn Posts() -> Html {
         let images = images.clone();
         let places_selected = places_selected.clone();
         let textarea = textarea.clone();
+        let cats_selected = cats_selected.clone();
         Callback::from(move |_| {
             let text: String = textarea.cast::<HtmlTextAreaElement>().unwrap().value();
             let images = images.to_vec();
             let places = places_selected.to_vec().into_iter().map(|i| i.id).collect::<Vec<u32>>();
+            let cats_selected = cats_selected.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<Empty> = fetch(
                     Method::POST, format!("{}/post", API).as_str(),
-                    PostsPost { text, images, places })
+                    PostsPost { text, images, places, cats: cats_selected.deref().iter().map(|c| c.catId).collect() })
                     .await.unwrap_or(Response::default_error(Empty::default()));
                 console::log_1(&format!("{:?}", r).into());
                 reload();
@@ -78,12 +81,12 @@ pub fn Posts() -> Html {
         let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
         html! {
             <div>
-            <p>{ format!("user: [{}]{}", p.user.uid,
-                if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</p>
-            <p>{ "发送时间: " } {{
+            <span>{ format!("user: [{}]{}", p.user.uid,
+                if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</span>
+            <span>{{
                 let datetime: DateTime<Local> = p.time.into();
                 &datetime.format("%m-%d %H:%M").to_string()
-                }}</p>
+                }}</span><br/>
             if !p.text.is_empty() { <p>{ &p.text }</p> }
             <div>
             { for p.images.iter().map(image_render) }
@@ -144,7 +147,6 @@ pub fn Posts() -> Html {
             });
         }, ());
     };
-    let cats_selected: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
     let cats_select = NodeRef::default();
     let select_cat = {
         let cats_selected = cats_selected.clone();

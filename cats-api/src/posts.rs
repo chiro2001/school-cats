@@ -10,6 +10,7 @@ pub struct PostsPost {
     pub text: String,
     pub images: Vec<String>,
     pub places: Vec<u32>,
+    pub cats: Vec<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

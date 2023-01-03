@@ -248,6 +248,10 @@ impl Database {
         for place in post.places {
             conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)", (id_post, place))?;
         }
+        // insert cats
+        for cat in post.cats {
+            conn.exec_drop("INSERT INTO PostCat (postId,catId) VALUES (?,?)", (id_post, cat))?;
+        }
         Ok(id_post)
     }
     fn select_cat_mapper(s: (u32, u32, String, NaiveDateTime, String, bool, String, String)) -> CatDB {
