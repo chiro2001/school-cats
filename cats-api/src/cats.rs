@@ -3,7 +3,7 @@
 use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CatDB {
     pub catId: u32,
     pub breedId: u32,
@@ -13,6 +13,21 @@ pub struct CatDB {
     pub atSchool: bool,
     pub whereabouts: String,
     pub health: String,
+}
+
+impl CatDB {
+    pub fn copy(&self) -> Self {
+        Self {
+            catId: self.catId,
+            breedId: self.breedId,
+            name: self.name.to_string(),
+            foundTime: self.foundTime.clone(),
+            source: self.source.to_string(),
+            atSchool: self.atSchool,
+            whereabouts: self.whereabouts.to_string(),
+            health: self.health.to_string(),
+        }
+    }
 }
 
 impl Default for CatDB {

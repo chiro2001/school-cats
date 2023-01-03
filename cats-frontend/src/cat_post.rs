@@ -11,6 +11,7 @@ use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
 use web_sys::{console, HtmlTextAreaElement};
 use cats_api::{Empty, Response};
+use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
 use cats_api::posts::{PostDisp, PostsPost};
 use crate::cat::cat_render;
@@ -131,6 +132,36 @@ pub fn Posts() -> Html {
             places_selected.set(list);
         })
     };
+    let cats: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
+    {
+        let cats = cats.clone();
+        use_effect_with_deps(move |_| {
+            let cats = cats.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let r: Vec<CatDB> = fetch(Method::GET, format!("{}/cat", API).as_str(), Empty::default())
+                    .await.unwrap_or(Response::default_error(vec![])).data;
+                cats.set(r);
+            });
+        }, ());
+    };
+    let cats_selected: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
+    let cats_select = NodeRef::default();
+    let select_cat = {
+        let cats_selected = cats_selected.clone();
+        let cats_select = cats_select.clone();
+        let cats = cats.clone();
+        Callback::from(move |_| {
+            let mut list = cats_selected.to_vec();
+            let id = node_str(&cats_select);
+            let s: HashSet<CatDB> = HashSet::from_iter(list.iter().map(|p| p.copy()));
+            let _ = cats.iter().filter(|c| c.catId.to_string() == id).map(|c| {
+                if !s.contains(c) {
+                    list.push(c.copy());
+                }
+            }).collect::<Vec<_>>();
+            cats_selected.set(list);
+        })
+    };
     html! {
     <>
         <h2>{ "猫猫贴" }</h2>
@@ -140,6 +171,10 @@ pub fn Posts() -> Html {
             <span>
                 <p>{ "正文" }</p>
                 <textarea ref={textarea}/>
+                <p>{ "猫猫: " } { for cats_selected.iter().map(cat_render) }</p>
+                <select ref={cats_select}>
+                { for cats.iter().map(|cat| html! { <option value={cat.catId.to_string()}>{cat.name.to_string()}</option> })}
+                </select><button onclick={select_cat}>{ "选择猫猫" }</button>
                 <p>{ "猫猫图" }</p>
                 <ul>
                     { for images.iter().map(|i: &String| html! {<img src={i.clone()}/>}) }

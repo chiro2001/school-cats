@@ -56,7 +56,7 @@ pub fn CatsFeedings() -> Html {
 pub fn cat_render(c: &CatDB) -> Html {
     html! {
         <>
-        <span>{&c.name}</span>
+        <span>{&c.name}{" "}</span>
         </>
     }
 }
