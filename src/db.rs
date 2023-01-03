@@ -6,12 +6,13 @@ use std::ops::Add;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
-use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse};
+use mysql_common::time03::format_description::well_known::iso8601::FormattedComponents::DateTime;
+use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse, FeedingDB};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::places::PlaceDB;
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
@@ -373,5 +374,11 @@ impl Database {
                 }
             }
         }
+    }
+    pub fn feeding_insert(&self, f: FeedingDB) -> Result<()> {
+        let mut conn = self.conn()?;
+        conn.exec_drop("INSERT INTO Feed (catId,userId,placeId,feedTime,feedFood,feedAmount) VALUES (?,?,?,?,?,?)",
+                       (f.catId, f.userId, f.placeId, DateTime::from(f.feedTime).native_dat, f.feedFood, f.feedAmount))?;
+        Ok(())
     }
 }

@@ -9,6 +9,7 @@ mod utils;
 mod cat_info;
 mod cat_post;
 mod cat;
+mod cat_feeding;
 
 use app::App;
 

@@ -44,7 +44,7 @@ impl Default for CatDisp {
 
 impl CatDisp {
     pub fn from_db(c: CatDB, breed: BreedDB) -> Self {
-        Self{
+        Self {
             catId: c.catId,
             breed,
             name: c.name,
@@ -104,4 +104,27 @@ pub struct BreedDB {
 pub struct BreedPost {
     pub name: String,
     pub desc: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FeedingDB {
+    pub catId: u32,
+    pub userId: u32,
+    pub placeId: u32,
+    pub feedTime: SystemTime,
+    pub feedFood: String,
+    pub feedAmount: String,
+}
+
+impl Default for FeedingDB {
+    fn default() -> Self {
+        Self {
+            catId: 0,
+            userId: 0,
+            placeId: 0,
+            feedTime: UNIX_EPOCH,
+            feedFood: "".to_string(),
+            feedAmount: "".to_string(),
+        }
+    }
 }

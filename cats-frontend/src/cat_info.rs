@@ -14,6 +14,7 @@ use anyhow::Result;
 use web_sys::console;
 use cats_api::{Empty, Response};
 use crate::cat::cat_render;
+use crate::cat_feeding::CatFeedingRegister;
 
 #[function_component]
 pub fn Information() -> Html {
@@ -143,6 +144,8 @@ pub fn Information() -> Html {
         </>
         <h3>{ "管理猫猫" }</h3>
         <Manager/>
+        <h3>{ "投喂登记" }</h3>
+        <CatFeedingRegister/>
         </>
     }
 }
