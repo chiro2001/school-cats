@@ -325,16 +325,17 @@ impl Database {
     }
     pub fn breed_list(&self) -> Result<Vec<BreedDB>> {
         let mut conn = self.conn()?;
-        Ok(conn.query_map("SELECT breedId,breedName,breedDesc FROM Breed ORDER BY breedId DESC",
+        Ok(conn.query_map("SELECT breedId,breedName,breedDesc FROM CatBreed ORDER BY breedId DESC",
                           |(breedId, breedName, breedDesc)| BreedDB { breedId, breedName, breedDesc })?)
     }
     pub fn breed_insert_or(&self, breed: BreedPost) -> Result<u32> {
         let mut conn = self.conn()?;
-        match conn.exec_drop("INSERT Breed (breedName,breedDesc) VALUES (?,?)", (breed.name, breed.desc)) {
+        match conn.exec_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (?,?)", (breed.name.as_str(), breed.desc)) {
             Ok(()) => Ok(conn.last_insert_id() as u32),
-            Err(_) => {
+            Err(e) => {
+                warn!("insert breed failed: {:?}", e);
                 // select name
-                let r = conn.exec_first("SELECT breedId,breedName,breedDesc FROM Breed WHERE breedName=?", (breed.name, ))
+                let r = conn.exec_first("SELECT breedId,breedName,breedDesc FROM CatBreed WHERE breedName=?", (breed.name, ))
                     .map(|row| {
                         row.map(|(breedId,breedName,breedDesc)| BreedDB { breedId,breedName,breedDesc })
                     })?;

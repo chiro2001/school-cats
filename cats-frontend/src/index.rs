@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 use std::ops::Deref;
-use std::time::SystemTime;
 use chrono::{DateTime, Local, Utc};
 use gloo_net::http::Method;
 use serde::{Deserialize, Serialize};
@@ -190,13 +189,20 @@ pub fn Information() -> Html {
         pub found_time: NodeRef,
         pub source: NodeRef,
     }
+    #[derive(Default, Clone)]
+    struct BreedInput {
+        pub name: NodeRef,
+        pub desc: NodeRef,
+    }
     impl CatInput {
         pub async fn data(&self) -> Result<CatDB> {
             let datetime = DateTime::parse_from_rfc3339(&node_str(&self.found_time))?.with_timezone(&Local);
             let foundTime = chrono2sys(datetime.naive_utc());
             // post breed
-            let breedId = fetch(Method::GET, format!("{}/breed", API).as_str(),
-                                BreedPost { name: node_str(&self.breed), desc: "".to_string() }).await?;
+            let breedId = fetch(
+                Method::GET, format!("{}/breed", API).as_str(),
+                BreedPost { name: node_str(&self.breed), desc: "".to_string() })
+                .await.unwrap_or(Response::default_error(1_u32)).data;
             let cat = CatDB {
                 catId: 0,
                 breedId,
@@ -208,6 +214,18 @@ pub fn Information() -> Html {
                 health: "".to_string(),
             };
             Ok(cat)
+        }
+    }
+    impl BreedInput {
+        pub async fn post(&self) -> Result<u32> {
+            let name = node_str(&self.name);
+            let desc = node_str(&self.desc);
+            if name.is_empty() { return Ok(0); }
+            Ok(fetch(
+                Method::POST, format!("{}/breed", API).as_str(),
+                BreedPost { name, desc })
+                .await.unwrap_or(Response::default_error(1_u32))
+                .data)
         }
     }
     let input = CatInput::default();
@@ -223,9 +241,30 @@ pub fn Information() -> Html {
             })
         })
     };
+    let input_breed = BreedInput::default();
+    let onclick_breed = {
+        let input_breed = input_breed.clone();
+        Callback::from(move |_| {
+            let input_breed = input_breed.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                match input_breed.post().await {
+                    Ok(id) if id > 1 => {
+                        web_sys::window().unwrap().location().reload().unwrap();
+                    }
+                    _ => {}
+                };
+            });
+        })
+    };
     html! {
         <>
         <h2>{ "登记信息" }</h2>
+        <h3>{ "添加品种" }</h3>
+        <>
+        <span>{ "名称" }<input ref={input_breed.name}/></span><br/>
+        <span>{ "描述" }<input ref={input_breed.desc}/></span><br/>
+        <button onclick={onclick_breed}>{ "添加" }</button>
+        </>
         <h3>{ "添加猫猫" }</h3>
         <>
         <span>{ "名字" }<input ref={input.name}/></span><br/>
