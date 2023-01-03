@@ -3,6 +3,7 @@
 use chrono::{DateTime, Local};
 use gloo_net::http::Method;
 use yew::prelude::*;
+use yew_router::prelude::*;
 use cats_api::{Empty, Response};
 use cats_api::cats::{CatDB, FeedingDB, FeedingInfo};
 use cats_api::places::PlaceDB;
@@ -10,6 +11,7 @@ use cats_api::user::User;
 use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
 use crate::cat::cat_disp_render;
+use crate::routes::Route;
 use crate::user::load_user_local;
 use crate::utils::{node_str, reload};
 
@@ -28,9 +30,16 @@ pub fn CatToFeed() -> Html {
         }, ());
     };
     let render: fn(&FeedingInfo) -> Html = |f| {
+        let datetime: DateTime<Local> = f.last.feedTime.into();
+        let time = time_fmt(datetime);
         html! {
             <ul>
-            <span>{cat_disp_render(&f.cat)}</span>
+            <span>{cat_disp_render(&f.cat)}{"上次由"}
+            <Link<Route> to={Route::UserInfo{id: f.user.uid}}>{ format!("[{}]{}", f.user.uid,
+                if !f.user.usernick.is_empty() { f.user.usernick.as_str() } else { f.user.username.as_str() }) }
+            </Link<Route>>
+            {"于"}{time.to_string()}{"投喂"}
+            </span>
             </ul>
         }
     };
