@@ -220,7 +220,7 @@ async fn main() -> Result<()> {
         }));
 
     let dbc = db.clone();
-    let to_feed_get = warp::post()
+    let to_feed_get = warp::get()
         .and(warp::path("to_feed"))
         .map(move || warp::reply::json(&match dbc.to_feed() {
             Ok(p) => Response::ok(p),

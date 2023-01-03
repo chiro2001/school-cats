@@ -3,7 +3,7 @@
 use std::ops::Deref;
 use gloo_net::http::Method;
 use yew::{html, Html, use_effect_with_deps, use_state, UseStateHandle};
-use cats_api::cats::{CatDB, CatPlacesResponse};
+use cats_api::cats::{CatDB, CatDisp, CatPlacesResponse};
 use crate::api::{API, fetch};
 use yew::prelude::*;
 use cats_api::{Empty, Response};
@@ -49,14 +49,17 @@ pub fn CatsMap() -> Html {
     }
 }
 
-#[function_component]
-pub fn CatsFeedings() -> Html {
+pub fn cat_render(c: &CatDB) -> Html {
     html! {
-        <h2>{ "猫猫待哺" }</h2>
+        <>
+        <Link<Route> to={Route::CatInfo{id: c.catId}}>
+        {&c.name}{" "}
+        </Link<Route>>
+        </>
     }
 }
 
-pub fn cat_render(c: &CatDB) -> Html {
+pub fn cat_disp_render(c: &CatDisp) -> Html {
     html! {
         <>
         <Link<Route> to={Route::CatInfo{id: c.catId}}>

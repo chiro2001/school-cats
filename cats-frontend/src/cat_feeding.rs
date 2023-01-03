@@ -4,18 +4,41 @@ use chrono::{DateTime, Local};
 use gloo_net::http::Method;
 use yew::prelude::*;
 use cats_api::{Empty, Response};
-use cats_api::cats::{CatDB, FeedingDB};
+use cats_api::cats::{CatDB, FeedingDB, FeedingInfo};
 use cats_api::places::PlaceDB;
 use cats_api::user::User;
 use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
+use crate::cat::cat_disp_render;
 use crate::user::load_user_local;
 use crate::utils::node_str;
 
 #[function_component]
 pub fn CatToFeed() -> Html {
+    let feedings: UseStateHandle<Vec<FeedingInfo>> = use_state(|| vec![]);
+    {
+        let feedings = feedings.clone();
+        use_effect_with_deps(move |_| {
+            wasm_bindgen_futures::spawn_local(async move {
+                let list: Vec<FeedingInfo> = fetch(
+                    Method::GET, format!("{}/to_feed", API).as_str(),
+                    Empty::default()).await.unwrap_or(Response::default_error(vec![])).data;
+                feedings.set(list);
+            });
+        }, ());
+    };
+    let render: fn(&FeedingInfo) -> Html = |f| {
+        html! {
+            <ul>
+            <span>{cat_disp_render(&f.cat)}</span>
+            </ul>
+        }
+    };
     html! {
-
+        <>
+        <h2>{ "猫猫待哺" }</h2>
+        { for feedings.iter().map(render) }
+        </>
     }
 }
 

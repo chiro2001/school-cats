@@ -1,11 +1,12 @@
 #![allow(non_snake_case)]
 
 use web_sys::console;
-use crate::cat::{CatsFeedings, CatsMap};
+use crate::cat::CatsMap;
 use crate::cat_info::Information;
 use crate::cat_post::Posts;
 use yew::prelude::*;
 use yew_router::prelude::*;
+use crate::cat_feeding::CatToFeed;
 use crate::routes::Route;
 use crate::user::load_user;
 
@@ -29,7 +30,7 @@ pub fn IndexPage() -> Html {
         <>
             <h1>{ "主页" }</h1>
             <CatsMap/>
-            <CatsFeedings/>
+            <CatToFeed/>
             <Posts/>
             <Information/>
         </>
