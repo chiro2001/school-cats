@@ -92,3 +92,9 @@ impl PartialEq for PostDisp {
         self.postId == other.postId
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CommentPost {
+    pub id: u32,
+    pub text: String,
+}

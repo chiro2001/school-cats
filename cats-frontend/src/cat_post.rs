@@ -15,25 +15,19 @@ use yew::html::ImplicitClone;
 use cats_api::{Empty, Response};
 use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
-use cats_api::posts::{CommentDisp, PostDisp, PostsPost};
+use cats_api::posts::{CommentDisp, CommentPost, PostDisp, PostsPost};
 use crate::cat::cat_render;
 use crate::routes::Route;
-
-#[derive(Clone, PartialEq)]
-pub struct PostDisp2(PostDisp);
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct PostItemProps {
     pub d: PostDisp,
 }
 
-impl ImplicitClone for PostDisp2 {
-
-}
-
 #[function_component]
 pub fn PostItem(props: &PostItemProps) -> Html {
     let p = &props.d;
+    let id = p.postId;
     let comment_render: fn(&CommentDisp) -> Html = |c| {
         html! {
             <ul>
@@ -45,6 +39,23 @@ pub fn PostItem(props: &PostItemProps) -> Html {
         }
     };
     let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
+    let comment_input = NodeRef::default();
+    let post_comment = {
+        let comment_input = comment_input.clone();
+        Callback::from(move |_| {
+            let comment_input = comment_input.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let text = node_str(&comment_input);
+                let v = CommentPost { text, id };
+                let r = fetch(Method::POST, format!("{}/comment", API).as_str(), v)
+                    .await.unwrap_or(Response::default_error(Empty::default()));
+                match r.code {
+                    200 => reload(),
+                    _ => {}
+                }
+            });
+        })
+    };
     html! {
         <ul>
         <Link<Route> to={Route::UserInfo{id: p.user.uid}}>{ format!("user: [{}]{}", p.user.uid,
@@ -69,6 +80,10 @@ pub fn PostItem(props: &PostItemProps) -> Html {
         if !p.comments.is_empty() {
             <div>{"评论: "}<br/>{ for p.comments.iter().map(comment_render) }</div>
         }
+        <div>
+        <input ref={comment_input}/>
+        <button onclick={post_comment}>{"发表评论"}</button>
+        </div>
         </ul>
     }
 }

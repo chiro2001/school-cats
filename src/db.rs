@@ -14,7 +14,7 @@ use mysql::prelude::*;
 use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse, FeedingDB, FeedingInfo};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::places::PlaceDB;
-use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
+use cats_api::posts::{CommentDisp, CommentPost, PostDisp, PostsContentDB, PostsPost};
 use cats_api::user::{User, UserDB};
 use crate::utils::chrono2sys;
 
@@ -96,8 +96,9 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.exec_drop("INSERT INTO PostCat (postId,catId) VALUES (?,?)",
                    (1, 1))?;
     // insert test comment
-    conn.exec_drop("INSERT INTO PostComment (postId,userId,commentText) VALUES (?,?,?)",
-                   (1, 1, "CommentText"))?;
+    conn.exec_drop("INSERT INTO CommentContent (commentText) VALUES (?)", ("测试评论", ))?;
+    conn.exec_drop("INSERT INTO PostComment (postId,userId,commentId) VALUES (?,?,?)",
+                   (1, 1, 1))?;
     Ok(())
 }
 
@@ -266,10 +267,13 @@ impl Database {
         let f = |(text, uid, username, head, usernick, motto)| {
             CommentDisp { text, user: User { username, uid, head, usernick, motto } }
         };
-        let comments = conn.exec_map("SELECT PostComment.commentText,PostComment.userId,User.username,Image.url,User.usernick,User.motto \
-	        FROM PostContent JOIN PostComment ON PostContent.postId=PostComment.postId \
+        let comments = conn.exec_map("SELECT CommentContent.commentText,PostComment.userId,User.username,Image.url,User.usernick,User.motto \
+	        FROM PostContent \
+	        JOIN PostComment ON PostContent.postId=PostComment.postId \
 	        JOIN User ON PostComment.postId=User.userId \
-	        JOIN Image ON User.imageId=Image.imageId WHERE PostContent.postId=?", (id, ), f)?;
+	        JOIN Image ON User.imageId=Image.imageId \
+	        JOIN CommentContent ON CommentContent.commentId=PostComment.commentId \
+	        WHERE PostContent.postId=?", (id, ), f)?;
         info!("[{}] comments: {:?}", id, comments);
         let post = match conn.exec_first("SELECT postId,userId,postTime,postText FROM PostContent \
             WHERE postId=?", (id, )).map(|row: Option<(u32, u32, NaiveDateTime, String)>| {
@@ -407,5 +411,13 @@ impl Database {
             .collect::<Vec<FeedingInfo>>();
         info!("r: {:?}", r);
         Ok(r)
+    }
+    pub fn comment_insert(&self, uid: u32, p: CommentPost) -> Result<()> {
+        let mut conn = self.conn()?;
+        conn.exec_drop("INSERT INTO CommentContent (commentText) VALUES (?)", (p.text, ))?;
+        let id = conn.last_insert_id() as u32;
+        conn.exec_drop("INSERT INTO PostComment (postId,userId,commentId) VALUES (?,?,?)",
+                       (p.id, uid, id))?;
+        Ok(())
     }
 }

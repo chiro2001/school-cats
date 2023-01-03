@@ -9,7 +9,7 @@ use warp::http::Method;
 use cats_api::cats::{BreedPost, CatDB, CatDisp, FeedingDB};
 use cats_api::jwt::TokenDB;
 use cats_api::places::PlacePost;
-use cats_api::posts::PostsPost;
+use cats_api::posts::{CommentPost, PostsPost};
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User, UserDB};
 
 #[tokio::main(flavor = "current_thread")]
@@ -227,6 +227,21 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), vec![])
         }));
 
+    let dbc = db.clone();
+    let comment_post = warp::post()
+        .and(warp::path("comment"))
+        .and(warp::header::<String>("token"))
+        .and(warp::body::json())
+        .map(move |token: String, r: CommentPost| warp::reply::json(&match dbc.token_check(&token) {
+            Ok(t) => {
+                match dbc.comment_insert(t.uid, r) {
+                    Ok(_) => Response::ok(Empty::default()),
+                    Err(e) => Response::error(&e.to_string(), Empty::default())
+                }
+            }
+            Err(e) => Response::error(&e.to_string(), Empty::default())
+        }));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -247,6 +262,7 @@ async fn main() -> Result<()> {
             .or(breed_post)
             .or(feeding_post)
             .or(to_feed_get)
+            .or(comment_post)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;

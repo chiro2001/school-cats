@@ -4,6 +4,8 @@ drop table if exists Cat;
 
 drop table if exists CatBreed;
 
+drop table if exists CommentContent;
+
 drop table if exists Contact;
 
 drop table if exists Feed;
@@ -95,6 +97,13 @@ create table Appear
       references Cat (catId) on delete restrict on update restrict
 );
 
+create table CommentContent
+(
+   commentId            int not null auto_increment,
+   commentText          varchar(128),
+   primary key (commentId)
+);
+
 create table Contact
 (
    contactId            int not null auto_increment,
@@ -149,12 +158,14 @@ create table PostComment
 (
    postId               int not null,
    userId               int not null,
-   commentText          varchar(128) not null,
-   primary key (postId, userId),
+   commentId            int not null,
+   primary key (postId, userId, commentId),
    constraint FK_PostComment foreign key (postId)
       references PostContent (postId) on delete restrict on update restrict,
    constraint FK_PostComment2 foreign key (userId)
-      references User (userId) on delete restrict on update restrict
+      references User (userId) on delete restrict on update restrict,
+   constraint FK_PostComment3 foreign key (commentId)
+      references CommentContent (commentId) on delete restrict on update restrict
 );
 
 create table PostImage
