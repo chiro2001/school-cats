@@ -82,7 +82,7 @@ pub fn Posts() -> Html {
     let post_render: fn(&PostDisp) -> Html = |p| {
         let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
         html! {
-            <div>
+            <ul>
             <Link<Route> to={Route::UserInfo{id: p.user.uid}}>{ format!("user: [{}]{}", p.user.uid,
                 if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }
             </Link<Route>>
@@ -102,7 +102,7 @@ pub fn Posts() -> Html {
             if !p.cats.is_empty() {
                 <div>{"猫猫: "} { for p.cats.iter().map(cat_render) }</div>
             }
-            </div>
+            </ul>
         }
     };
     let place_input = NodeRef::default();

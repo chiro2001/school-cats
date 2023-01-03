@@ -6,7 +6,7 @@ use crate::db::{Database, db_get_pool};
 use anyhow::Result;
 use log::{error, info};
 use warp::http::Method;
-use cats_api::cats::{BreedPost, CatDB, CatDisp};
+use cats_api::cats::{BreedPost, CatDB, CatDisp, FeedingDB};
 use cats_api::jwt::TokenDB;
 use cats_api::places::PlacePost;
 use cats_api::posts::PostsPost;
@@ -210,6 +210,15 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), 0),
         }));
 
+    let dbc = db.clone();
+    let feeding_post = warp::post()
+        .and(warp::path("feeding"))
+        .and(warp::body::json())
+        .map(move |f: FeedingDB| warp::reply::json(&match dbc.feeding_insert(f) {
+            Ok(()) => Response::ok(Empty::default()),
+            Err(e) => Response::error(&e.to_string(), Empty::default())
+        }));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -228,6 +237,7 @@ async fn main() -> Result<()> {
             .or(cat_id_get)
             .or(breed_get)
             .or(breed_post)
+            .or(feeding_post)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
