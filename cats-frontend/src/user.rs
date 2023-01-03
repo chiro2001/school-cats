@@ -167,8 +167,16 @@ pub fn UserInfoPage(props: &UserInfoProps) -> Html {
             <h3>{"loading"}</h3>
         }
     } else {
+        let u = user.deref();
         html! {
+            <>
             <h2>{"用户信息"}</h2>
+            <img src={u.head.to_string()}/>
+            <p>{"用户id:"}{u.uid.to_string()}</p>
+            <p>{"用户名:"}{u.username.to_string()}</p>
+            <p>{"昵称:"}{u.usernick.to_string()}</p>
+            <p>{"自我介绍:"}{u.motto.to_string()}</p>
+            </>
         }
     }
 }
