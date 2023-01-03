@@ -6,6 +6,7 @@ pub mod user;
 pub mod jwt;
 pub mod posts;
 pub mod cats;
+pub mod places;
 
 pub const PORT: u16 = 3030;
 

@@ -204,6 +204,11 @@ impl Database {
         conn.exec_drop("INSERT INTO Image (url) VALUES (:url);", params! { "url" => url })?;
         Ok(conn.last_insert_id() as u32)
     }
+    pub fn place_insert(&self, details: &str) -> Result<u32> {
+        let mut conn = self.conn()?;
+        conn.exec_drop("INSERT INTO Place (details) VALUES (?)", (details, ))?;
+        Ok(conn.last_insert_id() as u32)
+    }
     pub fn user_insert(&self, user: UserDB) -> Result<u32> {
         let mut conn = self.conn()?;
         info!("insert user: {:?}", user);

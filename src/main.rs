@@ -8,6 +8,7 @@ use anyhow::Result;
 use log::{error, info};
 use warp::http::Method;
 use cats_api::jwt::TokenDB;
+use cats_api::places::PlacePost;
 use cats_api::posts::PostsPost;
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User, UserDB};
 
@@ -141,6 +142,15 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), vec![]),
         }));
 
+    let dbc = db.clone();
+    let place_post = warp::post()
+        .and(warp::path("place"))
+        .and(warp::body::json())
+        .map(move |p: PlacePost| warp::reply::json(&match dbc.place_insert(&p.details) {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), 0),
+        }));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -152,6 +162,7 @@ async fn main() -> Result<()> {
             .or(post_post)
             .or(post_get)
             .or(cat_places_get)
+            .or(place_post)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;

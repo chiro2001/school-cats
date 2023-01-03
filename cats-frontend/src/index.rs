@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 
-use std::fmt::format;
 use std::ops::Deref;
 use chrono::{DateTime, Utc};
 use gloo_net::http::Method;
@@ -13,6 +12,7 @@ use crate::user::load_user;
 use yew_router::prelude::*;
 use cats_api::{Empty, Response};
 use cats_api::cats::CatPlacesResponse;
+use cats_api::places::PlacePost;
 use cats_api::posts::{PostDisp, PostsPost};
 use crate::api::{API, fetch};
 
@@ -69,6 +69,7 @@ fn Posts() -> Html {
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
     let places: UseStateHandle<Vec<PlaceItem>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
+    let place_input = NodeRef::default();
     let push_image = {
         let images = images.clone();
         let textarea = textarea.clone();
@@ -81,6 +82,7 @@ fn Posts() -> Html {
     };
     let post = {
         let images = images.clone();
+        let places = places.clone();
         let textarea = textarea.clone();
         Callback::from(move |_| {
             let text: String = textarea.cast::<HtmlTextAreaElement>().unwrap().value();
@@ -130,6 +132,23 @@ fn Posts() -> Html {
             </div>
         }
     };
+    let add_place = {
+        let places = places.clone();
+        let place_input = place_input.clone();
+        Callback::from(move |_| {
+            let places = places.clone();
+            let text: String = place_input.cast::<HtmlTextAreaElement>().unwrap().value();
+            wasm_bindgen_futures::spawn_local(async move {
+                let r: Response<u32> = fetch(Method::POST, format!("{}/place", API).as_str(), PlacePost{ details: text.to_string() })
+                    .await.unwrap_or(Response::default_error(0));
+                let mut list = places.to_vec();
+                if r.code != 0 {
+                    list.push(PlaceItem{ id: r.data, details: text });
+                    places.set(list);
+                }
+            });
+        })
+    };
     html! {
     <>
         <h2>{ "猫猫贴" }</h2>
@@ -143,6 +162,12 @@ fn Posts() -> Html {
                 <ul>
                     { for images.iter().map(|i: &String| html! {<img src={i.clone()}/>}) }
                 </ul>
+                <div>
+                    <p>{ "地点" }</p>
+                    <ul>{ for places.iter().map(|p: &PlaceItem| html! {p.details.to_string()}) }</ul>
+                    <input ref={place_input}/>
+                    <button onclick={add_place}>{ "添加地点" }</button>
+                </div>
                 <button onclick={push_image}>{ "添加图片" }</button>
                 <button onclick={post}>{ "发布猫猫贴" }</button>
             </span>
