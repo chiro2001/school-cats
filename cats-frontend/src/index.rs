@@ -121,8 +121,8 @@ fn Posts() -> Html {
                 <p>{ format!("user: [{}]{}", p.user.uid,
                     if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</p>
                 <p>{ "发送时间: " } {{
-                    let datetime: DateTime<Utc> = p.time.into();
-                    &format!("{:?}", datetime)
+                    let datetime: DateTime<Local> = p.time.into();
+                    &datetime.format("%m-%d %H:%M").to_string()
                     }}</p>
                 if !p.text.is_empty() { <p>{ &p.text }</p> }
                 <div>
