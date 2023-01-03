@@ -3,6 +3,7 @@
 use std::collections::HashSet;
 use std::ops::Deref;
 use yew::prelude::*;
+use yew_router::prelude::*;
 use chrono::{DateTime, Local};
 use gloo::console::console;
 use gloo_net::http::Method;
@@ -15,6 +16,7 @@ use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
 use cats_api::posts::{PostDisp, PostsPost};
 use crate::cat::cat_render;
+use crate::routes::Route;
 
 #[function_component]
 pub fn Posts() -> Html {
@@ -81,8 +83,9 @@ pub fn Posts() -> Html {
         let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
         html! {
             <div>
-            <span>{ format!("user: [{}]{}", p.user.uid,
-                if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</span>
+            <Link<Route> to={Route::UserInfo{id: p.user.uid}}>{ format!("user: [{}]{}", p.user.uid,
+                if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }
+            </Link<Route>>
             <span>{{
                 let datetime: DateTime<Local> = p.time.into();
                 &datetime.format("%m-%d %H:%M").to_string()
