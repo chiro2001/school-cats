@@ -11,14 +11,14 @@ use crate::routes::Route;
 use crate::user::load_user;
 use yew_router::prelude::*;
 use cats_api::{Empty, Response};
-use cats_api::cats::{BreedPost, CatDB, CatPlacesResponse};
+use cats_api::cats::{BreedDB, BreedPost, CatDB, CatPlacesResponse};
 use cats_api::places::PlacePost;
 use cats_api::posts::{PostDisp, PostsPost};
 use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
 use anyhow::Result;
 use gloo::console::console;
-use crate::utils::node_str;
+use crate::utils::{node_str, reload};
 
 #[function_component]
 fn CatsMap() -> Html {
@@ -98,7 +98,7 @@ fn Posts() -> Html {
                     PostsPost { text, images, places })
                     .await.unwrap_or(Response::default_error(Empty::default()));
                 console::log_1(&format!("{:?}", r).into());
-                web_sys::window().unwrap().location().reload().unwrap();
+                reload();
             });
         })
     };
@@ -249,12 +249,24 @@ pub fn Information() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 match input_breed.post().await {
                     Ok(id) if id > 1 => {
-                        web_sys::window().unwrap().location().reload().unwrap();
+                        reload();
                     }
                     _ => {}
                 };
             });
         })
+    };
+    let breeds: UseStateHandle<Vec<BreedDB>> = use_state(|| vec![]);
+    {
+        let breeds = breeds.clone();
+        use_effect_with_deps(move |_| {
+            wasm_bindgen_futures::spawn_local(async move {
+                let list: Vec<BreedDB> = fetch(
+                    Method::GET, format!("{}/breed", API).as_str(),
+                    Empty::default()).await.unwrap_or(Response::default_error(vec![])).data;
+                breeds.set(list);
+            });
+        }, ());
     };
     html! {
         <>
@@ -269,7 +281,7 @@ pub fn Information() -> Html {
         <>
         <span>{ "名字" }<input ref={input.name}/></span><br/>
         <span>{ "品种" }<select ref={input.breed}>
-            <option value=0>{"未知"}</option>
+        { for breeds.iter().map(|breed| html!{ <option value={breed.breedId.to_string()}>{breed.breedName.to_string()}</option> })}
         </select></span><br/>
         <span>{ "发现时间" }<input ref={input.found_time} type="datetime-local" value={time_fmt(chrono::Local::now())}/></span><br/>
         <span>{ "来源" }<input ref={input.source}/></span><br/>

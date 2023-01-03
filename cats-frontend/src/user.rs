@@ -12,6 +12,7 @@ use cats_api::{Empty, Response};
 use cats_api::jwt::TokenDB;
 use crate::api::{API, fetch, fetch_refresh, save_refresh_token, save_token};
 use crate::user::TokenError::RefreshTokenInvalid;
+use crate::utils::reload;
 
 #[derive(Debug)]
 pub enum TokenError {
@@ -118,7 +119,7 @@ pub fn UserInfoComponent() -> Html {
             save_token("invalid")?;
             save_refresh_token("invalid")?;
             save_string("user", "")?;
-            web_sys::window().unwrap().location().reload().unwrap();
+            reload();
             Ok(())
         };
         match f() {
