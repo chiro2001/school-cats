@@ -10,8 +10,7 @@ use gloo_net::http::Method;
 use yew::{Callback, html, Html, NodeRef, use_effect_with_deps, use_state, UseStateHandle};
 use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
-use web_sys::{console, HtmlTextAreaElement};
-use yew::html::ImplicitClone;
+use web_sys::{console, HtmlInputElement, HtmlTextAreaElement};
 use cats_api::{Empty, Response};
 use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
@@ -96,6 +95,27 @@ pub fn Posts() -> Html {
     let cats_selected: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
     let places_selected: UseStateHandle<Vec<PlaceDB>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
+    let input_file = NodeRef::default();
+    let input_file_change = {
+        Callback::from(move |_| {
+
+        })
+    };
+    let push_image = {
+        let images = images.clone();
+        let input_file = input_file.clone();
+        Callback::from(move |_| {
+            // console::log_2(&"text:".into(), &textarea.cast::<HtmlTextAreaElement>().unwrap().value().into());
+            // let mut imgs = images.to_vec();
+            // imgs.push("https://yew.rs/img/logo.png".to_string());
+            // images.set(imgs);
+            let input_file = input_file.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let i: HtmlInputElement = input_file.cast::<HtmlInputElement>().unwrap();
+                i.click();
+            });
+        })
+    };
     {
         let places = places.clone();
         use_effect_with_deps(move |_| {
@@ -106,16 +126,6 @@ pub fn Posts() -> Html {
                 places.set(list);
             });
         }, ());
-    };
-    let push_image = {
-        let images = images.clone();
-        let textarea = textarea.clone();
-        Callback::from(move |_| {
-            console::log_2(&"text:".into(), &textarea.cast::<HtmlTextAreaElement>().unwrap().value().into());
-            let mut imgs = images.to_vec();
-            imgs.push("https://yew.rs/img/logo.png".to_string());
-            images.set(imgs);
-        })
     };
     let post = {
         let images = images.clone();
@@ -236,6 +246,7 @@ pub fn Posts() -> Html {
                     <button onclick={select_place}>{ "选择地点" }</button>
                     <input ref={place_input}/><button onclick={add_place}>{ "添加新地点" }</button>
                 </div>
+                <input ref={input_file} type="file" style="display: none;" onchange={input_file_change}/>
                 <button onclick={push_image}>{ "添加图片" }</button>
                 <button onclick={post}>{ "发布猫猫贴" }</button>
             </span>
