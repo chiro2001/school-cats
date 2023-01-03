@@ -129,7 +129,7 @@ pub fn UserInfoComponent() -> Html {
     match &*user {
         Some(user) => html! {
             <div>
-            <div>{ format!("登录为: [{}]{}", user.uid, user.username) }</div>
+            <span>{ format!("登录为: [{}]{}", user.uid, user.username) }</span>
             <button onclick={logout}>{ "退出登录" }</button>
             </div>
         },
