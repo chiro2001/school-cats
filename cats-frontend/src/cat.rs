@@ -3,7 +3,7 @@
 use std::ops::Deref;
 use gloo_net::http::Method;
 use yew::{html, Html, use_effect_with_deps, use_state, UseStateHandle};
-use cats_api::cats::CatPlacesResponse;
+use cats_api::cats::{CatDB, CatPlacesResponse};
 use crate::api::{API, fetch};
 use yew::prelude::*;
 use cats_api::Empty;
@@ -35,9 +35,13 @@ pub fn CatsMap() -> Html {
     html! {
         <>
         <h2>{ "猫猫地图" }</h2>
-        <ul>
-        { for places.deref().iter().map(render) }
-        </ul>
+        if *loading {
+            <p>{"loading"}</p>
+        } else {
+            <ul>
+            { for places.deref().iter().map(render) }
+            </ul>
+        }
         </>
     }
 }
@@ -46,5 +50,13 @@ pub fn CatsMap() -> Html {
 pub fn CatsFeedings() -> Html {
     html! {
         <h2>{ "猫猫待哺" }</h2>
+    }
+}
+
+pub fn cat_render(c: &CatDB) -> Html {
+    html! {
+        <>
+        <span>{&c.name}</span>
+        </>
     }
 }

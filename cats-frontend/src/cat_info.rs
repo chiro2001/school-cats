@@ -13,6 +13,7 @@ use crate::utils::{node_str, reload};
 use anyhow::Result;
 use web_sys::console;
 use cats_api::{Empty, Response};
+use crate::cat::cat_render;
 
 #[function_component]
 pub fn Information() -> Html {
@@ -149,8 +150,20 @@ pub fn Information() -> Html {
 #[function_component]
 pub fn Manager() -> Html {
     let cats: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
+    {
+        let cats = cats.clone();
+        use_effect_with_deps(move |_| {
+            let cats = cats.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let r: Vec<CatDB> = fetch(Method::GET, format!("{}/cat", API).as_str(), Empty::default())
+                    .await.unwrap_or(Response::default_error(vec![])).data;
+                cats.set(r);
+            });
+        }, ());
+    };
     html! {
         <>
+        { for cats.iter().map(cat_render) }
         </>
     }
 }
