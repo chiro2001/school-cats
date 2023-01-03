@@ -3,8 +3,9 @@ use futures::TryStreamExt;
 use uuid::Uuid;
 use warp::{
     multipart::{FormData, Part},
-    Filter, Rejection, Reply,
+    Rejection, Reply,
 };
+use cats_api::PORT;
 
 pub async fn upload_image(form: FormData) -> Result<impl Reply, Rejection> {
     let parts: Vec<Part> = form.try_collect().await.map_err(|e| {
@@ -12,17 +13,20 @@ pub async fn upload_image(form: FormData) -> Result<impl Reply, Rejection> {
         warp::reject::reject()
     })?;
 
+    let mut links = vec![];
+
     for p in parts {
+        println!("p.name() = {}", p.name());
         if p.name() == "file" {
             let content_type = p.content_type();
             let file_ending;
             match content_type {
                 Some(file_type) => match file_type {
-                    "application/pdf" => {
-                        file_ending = "pdf";
-                    }
                     "image/png" => {
                         file_ending = "png";
+                    }
+                    "image/jpg" => {
+                        file_ending = "jpg";
                     }
                     v => {
                         eprintln!("invalid file type found: {}", v);
@@ -53,9 +57,10 @@ pub async fn upload_image(form: FormData) -> Result<impl Reply, Rejection> {
                 warp::reject::reject()
             })?;
             println!("created file: {}", file_name);
+            links.push(format!("http://localhost:{}{}", PORT, file_name[1..].to_string()).to_string());
         }
     }
 
-    Ok("success")
+    Ok(warp::reply::json(&links))
 }
 
