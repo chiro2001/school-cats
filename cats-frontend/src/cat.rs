@@ -7,6 +7,8 @@ use cats_api::cats::{CatDB, CatPlacesResponse};
 use crate::api::{API, fetch};
 use yew::prelude::*;
 use cats_api::Empty;
+use crate::routes::Route;
+use yew_router::prelude::*;
 
 #[function_component]
 pub fn CatsMap() -> Html {
@@ -56,7 +58,9 @@ pub fn CatsFeedings() -> Html {
 pub fn cat_render(c: &CatDB) -> Html {
     html! {
         <>
-        <span>{&c.name}{" "}</span>
+        <Link<Route> to={Route::CatInfo{id: c.catId}}>
+        {&c.name}{" "}
+        </Link<Route>>
         </>
     }
 }
