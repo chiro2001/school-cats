@@ -2,6 +2,7 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
+use crate::user::User;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CatDB {
@@ -127,4 +128,11 @@ impl Default for FeedingDB {
             feedAmount: "".to_string(),
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct FeedingInfo {
+    pub cat: CatDisp,
+    pub last: FeedingDB,
+    pub user: User,
 }

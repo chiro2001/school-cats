@@ -11,7 +11,7 @@ use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
-use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse, FeedingDB};
+use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse, FeedingDB, FeedingInfo};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::places::PlaceDB;
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
@@ -381,5 +381,34 @@ impl Database {
         conn.exec_drop("INSERT INTO Feed (catId,userId,placeId,feedTime,feedFood,feedAmount) VALUES (?,?,?,?,?,?)",
                        (f.catId, f.userId, f.placeId, time, f.feedFood, f.feedAmount))?;
         Ok(())
+    }
+    pub fn feeding_last(&self, id: u32) -> Result<FeedingDB> {
+        let mut conn = self.conn()?;
+        let r = conn.exec_first("SELECT catId,userId,placeId,feedTime,feedFood,feedAmount FROM Feed ORDER BY catId DESC WHERE catId=?", (id, ))
+            .map(|r| r.map(|(catId, userId, placeId, feedTime, feedFood, feedAmount)| {
+                FeedingDB { catId, userId, placeId, feedTime: chrono2sys(feedTime), feedFood, feedAmount }
+            }))?;
+        match r {
+            Some(r) => Ok(r),
+            None => Err(anyhow!("feeding not found"))
+        }
+    }
+    pub fn to_feed(&self) -> Result<Vec<FeedingInfo>> {
+        let cats = self.cats()?;
+        let r = cats.into_iter().map(|cat| {
+            let id = cat.catId;
+            (cat, self.feeding_last(id).unwrap_or(FeedingDB::default()))
+        })
+            .filter(|f| f.0.catId > 0).collect::<Vec<(CatDB, FeedingDB)>>();
+        let r = r.into_iter().map(|f| {
+            let id = f.1.userId;
+            (f.0, f.1, self.user(id).unwrap_or(User::default()))
+        })
+            .filter(|f| f.2.uid > 0)
+            .map(|f| (self.cat(f.0.catId).unwrap_or(CatDisp::default()), f.1, f.2))
+            .filter(|f| f.0.catId > 0)
+            .map(|f| FeedingInfo { cat: f.0, last: f.1, user: f.2 })
+            .collect::<Vec<FeedingInfo>>();
+        Ok(r)
     }
 }

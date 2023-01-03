@@ -219,6 +219,14 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), Empty::default())
         }));
 
+    let dbc = db.clone();
+    let to_feed_get = warp::post()
+        .and(warp::path("to_feed"))
+        .map(move || warp::reply::json(&match dbc.to_feed() {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), vec![])
+        }));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -238,6 +246,7 @@ async fn main() -> Result<()> {
             .or(breed_get)
             .or(breed_post)
             .or(feeding_post)
+            .or(to_feed_get)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
