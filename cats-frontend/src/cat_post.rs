@@ -14,7 +14,7 @@ use web_sys::{console, HtmlTextAreaElement};
 use cats_api::{Empty, Response};
 use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
-use cats_api::posts::{PostDisp, PostsPost};
+use cats_api::posts::{CommentDisp, PostDisp, PostsPost};
 use crate::cat::cat_render;
 use crate::routes::Route;
 
@@ -80,6 +80,16 @@ pub fn Posts() -> Html {
         }, ());
     };
     let post_render: fn(&PostDisp) -> Html = |p| {
+        let comment_render: fn(&CommentDisp) -> Html = |c| {
+            html! {
+            <ul>
+                <Link<Route> to={Route::UserInfo{id: c.user.uid}}>{ format!("[{}]{}", c.user.uid,
+                    if !c.user.usernick.is_empty() { c.user.usernick.as_str() } else { c.user.username.as_str() }) }
+                </Link<Route>>{": "}
+                <span>{c.text.to_string()}</span>
+            </ul>
+        }
+        };
         let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
         html! {
             <ul>
@@ -101,6 +111,9 @@ pub fn Posts() -> Html {
             }
             if !p.cats.is_empty() {
                 <div>{"猫猫: "} { for p.cats.iter().map(cat_render) }</div>
+            }
+            if !p.comments.is_empty() {
+                <div>{"评论: "}<br/>{ for p.comments.iter().map(comment_render) }</div>
             }
             </ul>
         }
