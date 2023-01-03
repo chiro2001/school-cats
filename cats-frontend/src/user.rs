@@ -130,6 +130,7 @@ pub fn UserInfoComponent() -> Html {
         Some(user) => html! {
             <div>
             <span>{ format!("登录为: [{}]{}", user.uid, user.username) }</span>
+            <img src={ user.head.to_string() } width=24 height=24/>
             <button onclick={logout}>{ "退出登录" }</button>
             </div>
         },

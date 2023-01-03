@@ -275,7 +275,7 @@ impl Database {
         }?;
         info!("[{}] post: {:?}", id, post);
         let user = self.user(post.userId)?;
-        Ok(PostDisp { postId: id, user, images, comments, places, cats })
+        Ok(PostDisp { postId: id, user, images, comments, places, cats, text: post.postText, time: post.postTime })
     }
     pub fn post_list(&self) -> Result<Vec<PostDisp>> {
         let mut conn = self.conn()?;

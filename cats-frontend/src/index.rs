@@ -1,5 +1,8 @@
 #![allow(non_snake_case)]
 
+use std::ops::Deref;
+use std::time::SystemTime;
+use chrono::{DateTime, Utc};
 use gloo_net::http::Method;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
@@ -29,7 +32,7 @@ fn CatsFeedings() -> Html {
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 struct PlaceItem {
     pub id: u32,
-    pub details: String
+    pub details: String,
 }
 
 #[function_component]
@@ -61,6 +64,7 @@ fn Posts() -> Html {
                     PostsPost { text, images, places })
                     .await.unwrap_or(Response::default_error(Empty::default()));
                 console::log_1(&format!("{:?}", r).into());
+                web_sys::window().unwrap().location().reload().unwrap();
             });
         })
     };
@@ -76,9 +80,31 @@ fn Posts() -> Html {
             });
         }, ());
     };
+    let post_render: fn(&PostDisp) -> Html = |p| {
+        let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
+        html! {
+            <div>
+                <p>{ format!("user: [{}]{}", p.user.uid, p.user.usernick) }</p>
+                <p>{ "发送时间: " } {{
+                    let datetime: DateTime<Utc> = p.time.into();
+                    &format!("{:?}", datetime)
+                    }}</p>
+                if !p.text.is_empty() { <p>{ &p.text }</p> }
+                <div>
+                { for p.images.iter().map(image_render) }
+                </div>
+                if !p.places.is_empty() {
+                    <div>
+                    { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}</span> }) }
+                    </div>
+                }
+            </div>
+        }
+    };
     html! {
     <>
         <h2>{ "猫猫贴" }</h2>
+        { for posts.deref().iter().map(post_render) }
         <h4>{ "新的猫猫贴" }</h4>
         <div>
             <span>

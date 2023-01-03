@@ -44,12 +44,35 @@ pub struct CommentDisp {
     pub text: String,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PostDisp {
     pub postId: u32,
+    pub text: String,
+    pub time: SystemTime,
     pub user: User,
     pub images: Vec<String>,
     pub comments: Vec<CommentDisp>,
     pub places: Vec<String>,
     pub cats: Vec<CatDB>,
+}
+
+impl Default for PostDisp {
+    fn default() -> Self {
+        Self {
+            postId: 0,
+            text: "".to_string(),
+            time: SystemTime::UNIX_EPOCH,
+            user: Default::default(),
+            images: vec![],
+            comments: vec![],
+            places: vec![],
+            cats: vec![],
+        }
+    }
+}
+
+impl PartialEq for PostDisp {
+    fn eq(&self, other: &Self) -> bool {
+        self.postId == other.postId
+    }
 }
