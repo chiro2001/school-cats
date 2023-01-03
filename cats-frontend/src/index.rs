@@ -6,6 +6,7 @@ use crate::cat_info::Information;
 use crate::cat_post::Posts;
 use yew::prelude::*;
 use yew_router::prelude::*;
+use crate::routes::Route;
 use crate::user::load_user;
 
 #[function_component]

@@ -11,6 +11,7 @@ use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
 use anyhow::Result;
+use web_sys::console;
 use cats_api::{Empty, Response};
 
 #[function_component]
@@ -29,7 +30,10 @@ pub fn Information() -> Html {
     }
     impl CatInput {
         pub async fn data(&self) -> Result<CatDB> {
-            let datetime = DateTime::parse_from_rfc3339(&node_str(&self.found_time))?.with_timezone(&Local);
+            let time = format!("{}:00 +0800", node_str(&self.found_time)).to_string();
+            console::log_1(&time.as_str().into());
+            let datetime = DateTime::parse_from_str(&time, "%Y-%m-%dT%H:%M:%S %z")?.with_timezone(&Local);
+            console::log_1(&format!("datetime: {}", datetime.to_rfc2822()).into());
             let foundTime = chrono2sys(datetime.naive_utc());
             // post breed
             let breedId = fetch(
@@ -68,7 +72,10 @@ pub fn Information() -> Html {
             let input = input.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 match input.data().await {
-                    Ok(data) => {}
+                    Ok(data) => {
+                        fetch(Method::POST, format!("{}/cat", API).as_str(), data)
+                            .await.unwrap_or(Response::default_error(0));
+                    }
                     Err(e) => { console!(format!("{:?}", e)); }
                 };
             })
