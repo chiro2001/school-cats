@@ -11,7 +11,7 @@ use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
-use cats_api::cats::{BreedDB, BreedPost, CatDB, CatPlacesResponse};
+use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::places::PlaceDB;
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
@@ -226,12 +226,6 @@ impl Database {
         ))?;
         Ok(conn.last_insert_id() as u32)
     }
-    // pub fn post_relative_insert(&self, p: PostsDB) -> Result<()> {
-    //     let mut conn = self.conn()?;
-    //     conn.exec_drop("INSERT INTO Post (postId,userId,catId,imageId,placeId,commentId) VALUES (?,?,?,?,?,?)",
-    //                    (p.postId, p.userId, p.catId, p.placeId, p.commentId))?;
-    //     Ok(())
-    // }
     pub fn post_insert(&self, uid: u32, post: PostsPost) -> Result<u32> {
         let mut conn = self.conn()?;
         info!("insert post: {:?}", post);
@@ -317,6 +311,22 @@ impl Database {
         let mut conn = self.conn()?;
         Ok(conn.query_map("SELECT catId, breedId, name, foundTime, source, atSchool, whereabouts, health FROM Cat ORDER BY catId DESC", Self::select_cat_mapper)?)
     }
+    pub fn cat(&self, id: u32) -> Result<CatDisp> {
+        let mut conn = self.conn()?;
+        let r = conn.exec_first("SELECT catId, breedId, name, foundTime, source, atSchool, whereabouts, health FROM Cat WHERE catId=?", (id, ))
+            .map(|row| row.map(|(catId, breedId, name, foundTime, source, atSchool, whereabouts, health)| CatDB { catId, breedId, name, foundTime: chrono2sys(foundTime), source, atSchool, whereabouts, health }))?;
+        match r {
+            Some(r) => {
+                match self.breed(r.breedId) {
+                    Ok(breed) => {
+                        Ok(CatDisp::from_db(r, breed))
+                    }
+                    Err(e) => Err(e)
+                }
+            }
+            None => Err(anyhow!("no cat found"))
+        }
+    }
     pub fn cats_places(&self) -> Result<Vec<CatPlacesResponse>> {
         let mut conn = self.conn()?;
         let cats = self.cats()?;
@@ -336,6 +346,15 @@ impl Database {
         let mut conn = self.conn()?;
         Ok(conn.query_map("SELECT breedId,breedName,breedDesc FROM CatBreed ORDER BY breedId DESC",
                           |(breedId, breedName, breedDesc)| BreedDB { breedId, breedName, breedDesc })?)
+    }
+    pub fn breed(&self, id: u32) -> Result<BreedDB> {
+        let mut conn = self.conn()?;
+        let r = conn.exec_first("SELECT breedId,breedName,breedDesc FROM CatBreed WHERE breedId=?", (id, ))
+            .map(|row| row.map(|(breedId, breedName, breedDesc)| BreedDB { breedId, breedName, breedDesc }))?;
+        match r {
+            Some(r) => Ok(r),
+            None => Err(anyhow!("no breed found!"))
+        }
     }
     pub fn breed_insert_or(&self, breed: BreedPost) -> Result<u32> {
         let mut conn = self.conn()?;

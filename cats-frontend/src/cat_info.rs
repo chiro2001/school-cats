@@ -6,7 +6,7 @@ use chrono::{DateTime, Local};
 use gloo::console::console;
 use gloo_net::http::Method;
 use yew::{Callback, html, Html, NodeRef, use_effect_with_deps, use_state, UseStateHandle};
-use cats_api::cats::{BreedDB, BreedPost, CatDB};
+use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp};
 use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
@@ -165,5 +165,46 @@ pub fn Manager() -> Html {
         <>
         { for cats.iter().map(cat_render) }
         </>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CatInfoProps {
+    pub id: u32,
+}
+
+#[function_component]
+pub fn CatInfoPage(props: &CatInfoProps) -> Html {
+    let cat: UseStateHandle<CatDisp> = use_state(|| CatDisp::default());
+    let id = props.id;
+    {
+        let cat = cat.clone();
+        use_effect_with_deps(move |_| {
+            let cat = cat.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let r = fetch(Method::GET, format!("{}/cat/{}", API, id).as_str(), Empty::default())
+                    .await.unwrap_or(Response::default_error(CatDisp::default())).data;
+                cat.set(r);
+            });
+        }, ());
+    };
+    if cat.deref().catId == 0 {
+        html! {
+            <h3>{"loading"}</h3>
+        }
+    } else {
+        let c = cat.deref();
+        html! {
+            <>
+            <h2>{"猫猫信息"}</h2>
+            <p>{"猫猫id: "}{c.catId.to_string()}</p>
+            <p>{"猫猫名字: "}{c.name.to_string()}</p>
+            <p>{"猫猫品种: "}{c.breed.breedName.to_string()}{" "}{c.breed.breedDesc.to_string()}</p>
+            <p>{"猫猫发现时间: "}{time_fmt(DateTime::from(c.foundTime))}</p>
+            <p>{"猫猫是否在校: "}{c.atSchool.to_string()}</p>
+            <p>{"猫猫近况: "}{c.whereabouts.to_string()}</p>
+            <p>{"猫猫健康状况: "}{c.health.to_string()}</p>
+            </>
+        }
     }
 }

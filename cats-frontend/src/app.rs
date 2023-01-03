@@ -1,5 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+use crate::cat_info::CatInfoPage;
 use crate::index::IndexPage;
 use crate::login::{LoginPage, RegisterPage};
 use crate::routes::Route;
@@ -12,6 +13,7 @@ fn switch(route: Route) -> Html {
         Login => { html! { <LoginPage/> } }
         Register => { html! { <RegisterPage/> } }
         UserInfo { id } => { html! { <UserInfoPage {id}/> } }
+        CatInfo { id } => { html! { <CatInfoPage {id}/> } }
         _ => html! {
             <h1>{ "你来到了没有猫猫的可怕地方！" }</h1>
         }

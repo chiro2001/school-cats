@@ -13,6 +13,6 @@ pub enum Route {
     NotFound,
     #[at("/user/:id")]
     UserInfo { id: u32 },
-    #[at("/cat")]
-    CatInfo,
+    #[at("/cat/:id")]
+    CatInfo { id: u32 },
 }
