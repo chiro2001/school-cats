@@ -104,7 +104,7 @@ fn Posts() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<Vec<PostDisp>> = fetch(
                     Method::GET, format!("{}/post", API).as_str(),
-                    Empty::default()
+                    Empty::default(),
                 ).await.unwrap_or(Response::default_error(vec![]));
                 posts.set(r.data);
             });
@@ -138,12 +138,13 @@ fn Posts() -> Html {
         Callback::from(move |_| {
             let places = places.clone();
             let text: String = place_input.cast::<HtmlTextAreaElement>().unwrap().value();
+            if text.is_empty() { return; }
             wasm_bindgen_futures::spawn_local(async move {
-                let r: Response<u32> = fetch(Method::POST, format!("{}/place", API).as_str(), PlacePost{ details: text.to_string() })
+                let r: Response<u32> = fetch(Method::POST, format!("{}/place", API).as_str(), PlacePost { details: text.to_string() })
                     .await.unwrap_or(Response::default_error(0));
                 let mut list = places.to_vec();
                 if r.code != 0 {
-                    list.push(PlaceItem{ id: r.data, details: text });
+                    list.push(PlaceItem { id: r.data, details: text });
                     places.set(list);
                 }
             });
@@ -163,8 +164,7 @@ fn Posts() -> Html {
                     { for images.iter().map(|i: &String| html! {<img src={i.clone()}/>}) }
                 </ul>
                 <div>
-                    <p>{ "地点" }</p>
-                    <ul>{ for places.iter().map(|p: &PlaceItem| html! {p.details.to_string()}) }</ul>
+                    <p>{ "地点: " }<span>{ for places.iter().map(|p: &PlaceItem| html! {<>{p.details.to_string()}{" "}</>}) }</span></p>
                     <input ref={place_input}/>
                     <button onclick={add_place}>{ "添加地点" }</button>
                 </div>
