@@ -6,7 +6,7 @@ use yew::{html, Html, use_effect_with_deps, use_state, UseStateHandle};
 use cats_api::cats::{CatDB, CatPlacesResponse};
 use crate::api::{API, fetch};
 use yew::prelude::*;
-use cats_api::Empty;
+use cats_api::{Empty, Response};
 use crate::routes::Route;
 use yew_router::prelude::*;
 
@@ -20,8 +20,8 @@ pub fn CatsMap() -> Html {
         use_effect_with_deps(move |_| {
             wasm_bindgen_futures::spawn_local(async move {
                 let p = fetch(Method::GET, format!("{}/cat_places", API).as_str(), Empty::default())
-                    .await.unwrap_or(vec![]);
-                places.set(p);
+                    .await.unwrap_or(Response::default_error(vec![]));
+                places.set(p.data);
                 loading.set(false);
             });
         }, ());
@@ -29,8 +29,9 @@ pub fn CatsMap() -> Html {
     let render: fn(&CatPlacesResponse) -> Html = |c| {
         html! {
             <span>
-            <span>{ format!("[{}] {}: ", c.cat.catId, c.cat.name) }</span>
+            <span>{cat_render(&c.cat)}</span>
             <span>{ for c.places.iter() }</span>
+            <br/>
             </span>
         }
     };
