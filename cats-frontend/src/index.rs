@@ -84,7 +84,8 @@ fn Posts() -> Html {
         let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
         html! {
             <div>
-                <p>{ format!("user: [{}]{}", p.user.uid, p.user.usernick) }</p>
+                <p>{ format!("user: [{}]{}", p.user.uid,
+                    if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</p>
                 <p>{ "发送时间: " } {{
                     let datetime: DateTime<Utc> = p.time.into();
                     &format!("{:?}", datetime)

@@ -51,7 +51,7 @@ create table User
    usernick             varchar(20) not null,
    motto                varchar(32),
    primary key (userId),
-   key AK_Identifier_2 (username),
+   unique key AK_Identifier_2 (username),
    constraint FK_Relationship_9 foreign key (imageId)
       references Image (imageId) on delete restrict on update restrict
 );
