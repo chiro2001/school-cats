@@ -1,4 +1,5 @@
 mod db;
+mod upload;
 
 use warp::{Filter, http};
 use cats_api::*;
@@ -11,6 +12,7 @@ use cats_api::jwt::TokenDB;
 use cats_api::places::PlacePost;
 use cats_api::posts::{CommentPost, PostsPost};
 use cats_api::user::{LoginPost, LoginResponse, RegisterPost, User, UserDB};
+use crate::upload::upload_image;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -242,6 +244,13 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), Empty::default())
         }));
 
+    let upload_route = warp::path("upload")
+        .and(warp::post())
+        .and(warp::multipart::form().max_length(5_000_000))
+        .and_then(upload_image);
+    let download_route = warp::path("files")
+        .and(warp::fs::dir("./files/"));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -263,6 +272,8 @@ async fn main() -> Result<()> {
             .or(feeding_post)
             .or(to_feed_get)
             .or(comment_post)
+            .or(upload_route)
+            .or(download_route)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;

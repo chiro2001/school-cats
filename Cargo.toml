@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 cats-api = { path = "cats-api" }
-tokio = { version = "1.23.0", features = ["macros"] }
+tokio = { version = "1.23.0", features = ["macros", "fs"] }
 warp = "0.3.3"
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
@@ -19,6 +19,9 @@ mysql = "23.0.1"
 encoding = "0.2.33"
 chrono = "0.4.23"
 mysql_common = { version = "0.29.2", features = ["chrono"]}
+uuid = { version = "1.2.2", features = ["v4"]}
+futures = { version = "0.3", default-features = false }
+bytes = "1.3.0"
 
 [workspace]
 members = [
