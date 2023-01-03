@@ -2,12 +2,13 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 use web_sys::console;
 use cats_api::user::User;
 use crate::storage::{load_string, save_string, storage};
 use anyhow::{anyhow, Result};
 use gloo_net::http::Method;
-use yew::{Html, function_component, html, use_state, use_effect_with_deps, Callback};
+use yew::{Html, function_component, html, use_state, use_effect_with_deps, Callback, Properties, UseStateHandle};
 use cats_api::{Empty, Response};
 use cats_api::jwt::TokenDB;
 use crate::api::{API, fetch, fetch_refresh, save_refresh_token, save_token};
@@ -137,6 +138,37 @@ pub fn UserInfoComponent() -> Html {
         },
         None => html! {
             <div>{ "未登录" }</div>
+        }
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct UserInfoProps {
+    pub id: u32
+}
+
+#[function_component]
+pub fn UserInfoPage(props: &UserInfoProps) -> Html {
+    let user: UseStateHandle<User> = use_state(|| User::default());
+    let id = props.id;
+    {
+        let user = user.clone();
+        use_effect_with_deps(move |_| {
+            let user = user.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let r = fetch(Method::GET, format!("{}/user/{}", API, id).as_str(), Empty::default())
+                    .await.unwrap_or(Response::default_error(User::default()));
+                user.set(r.data);
+            });
+        }, ());
+    };
+    if user.deref().uid == 0 {
+        html! {
+            <h3>{"loading"}</h3>
+        }
+    } else {
+        html! {
+            <h2>{"用户信息"}</h2>
         }
     }
 }

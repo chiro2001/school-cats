@@ -38,14 +38,20 @@ async fn main() -> Result<()> {
             &Response::ok(Hello { msg: name })
         ));
 
+    let dbc = db.clone();
     let user_uid_get = warp::get()
         .and(warp::path("user"))
         .and(warp::path::param::<u32>())
-        .map(|_uid| warp::reply::json(&Response::ok(User::default())));
+        .and(warp::path::end())
+        .map(move |uid| warp::reply::json(&match dbc.user(uid) {
+            Ok(u) => Response::ok(u),
+            Err(e) => Response::error(&e.to_string(), User::default())
+        }));
 
     let dbc = db.clone();
     let user_get = warp::get()
         .and(warp::path("user"))
+        .and(warp::path::end())
         .and(warp::header::<String>("token"))
         .map(move |token: String| warp::reply::json(&match dbc.token_check(&token) {
             Ok(t) => {

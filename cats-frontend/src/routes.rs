@@ -11,8 +11,8 @@ pub enum Route {
     #[not_found]
     #[at("/404")]
     NotFound,
-    #[at("/user")]
-    UserInfo,
+    #[at("/user/:id")]
+    UserInfo { id: u32 },
     #[at("/cat")]
     CatInfo,
 }
