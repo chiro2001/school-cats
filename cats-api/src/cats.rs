@@ -33,5 +33,18 @@ impl Default for CatDB {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CatPlacesResponse {
     pub cat: CatDB,
-    pub places: Vec<String>
+    pub places: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BreedDB {
+    pub breedId: u32,
+    pub breedName: String,
+    pub breedDesc: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BreedPost {
+    pub name: String,
+    pub desc: String,
 }

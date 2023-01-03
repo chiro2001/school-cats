@@ -6,6 +6,7 @@ use crate::db::{Database, db_get_pool};
 use anyhow::Result;
 use log::{error, info};
 use warp::http::Method;
+use cats_api::cats::{BreedPost, CatDB};
 use cats_api::jwt::TokenDB;
 use cats_api::places::PlacePost;
 use cats_api::posts::PostsPost;
@@ -150,6 +151,32 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), 0),
         }));
 
+    let dbc = db.clone();
+    let cat_post = warp::post()
+        .and(warp::path("cat"))
+        .and(warp::body::json())
+        .map(move |c: CatDB| warp::reply::json(&match dbc.cat_insert(c) {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), 0),
+        }));
+
+    let dbc = db.clone();
+    let breed_get = warp::get()
+        .and(warp::path("breed"))
+        .map(move || warp::reply::json(&match dbc.breed_list() {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), vec![]),
+        }));
+
+    let dbc = db.clone();
+    let breed_post = warp::post()
+        .and(warp::path("breed"))
+        .and(warp::body::json())
+        .map(move |b: BreedPost| warp::reply::json(&match dbc.breed_insert_or(b) {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), 0),
+        }));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -162,6 +189,9 @@ async fn main() -> Result<()> {
             .or(post_get)
             .or(cat_places_get)
             .or(place_post)
+            .or(cat_post)
+            .or(breed_get)
+            .or(breed_post)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;

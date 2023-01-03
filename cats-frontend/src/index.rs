@@ -12,7 +12,7 @@ use crate::routes::Route;
 use crate::user::load_user;
 use yew_router::prelude::*;
 use cats_api::{Empty, Response};
-use cats_api::cats::{CatDB, CatPlacesResponse};
+use cats_api::cats::{BreedPost, CatDB, CatPlacesResponse};
 use cats_api::places::PlacePost;
 use cats_api::posts::{PostDisp, PostsPost};
 use cats_api::utils::{chrono2sys, time_fmt};
@@ -194,9 +194,12 @@ pub fn Information() -> Html {
         pub async fn data(&self) -> Result<CatDB> {
             let datetime = DateTime::parse_from_rfc3339(&node_str(&self.found_time))?.with_timezone(&Local);
             let foundTime = chrono2sys(datetime.naive_utc());
+            // post breed
+            let breedId = fetch(Method::GET, format!("{}/breed", API).as_str(),
+                                BreedPost { name: node_str(&self.breed), desc: "".to_string() }).await?;
             let cat = CatDB {
                 catId: 0,
-                breedId: 0,
+                breedId,
                 name: node_str(&self.name),
                 foundTime,
                 source: node_str(&self.source),
@@ -226,7 +229,9 @@ pub fn Information() -> Html {
         <h3>{ "添加猫猫" }</h3>
         <>
         <span>{ "名字" }<input ref={input.name}/></span><br/>
-        <span>{ "品种" }<input ref={input.breed}/></span><br/>
+        <span>{ "品种" }<select ref={input.breed}>
+            <option value=0>{"未知"}</option>
+        </select></span><br/>
         <span>{ "发现时间" }<input ref={input.found_time} type="datetime-local" value={time_fmt(chrono::Local::now())}/></span><br/>
         <span>{ "来源" }<input ref={input.source}/></span><br/>
         <button onclick={onclick_add}>{ "添加" }</button>

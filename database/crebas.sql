@@ -61,7 +61,8 @@ create table CatBreed
    breedId              int not null auto_increment,
    breedName            varchar(10) not null,
    breedDesc            varchar(32),
-   primary key (breedId)
+   primary key (breedId),
+   unique key AK_Identifier_2 (breedName)
 );
 
 create table Cat

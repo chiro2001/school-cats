@@ -11,7 +11,7 @@ use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
-use cats_api::cats::{CatDB, CatPlacesResponse};
+use cats_api::cats::{BreedDB, BreedPost, CatDB, CatPlacesResponse};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
 use cats_api::user::{User, UserDB};
@@ -298,7 +298,6 @@ impl Database {
         info!("post_list: {:?}", posts);
         Ok(posts)
     }
-    #[allow(dead_code)]
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
         let mut conn = self.conn()?;
         conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
@@ -323,5 +322,27 @@ impl Database {
             };
             CatPlacesResponse { cat, places }
         }).filter(|c| !c.places.is_empty()).collect())
+    }
+    pub fn breed_list(&self) -> Result<Vec<BreedDB>> {
+        let mut conn = self.conn()?;
+        Ok(conn.query_map("SELECT breedId,breedName,breedDesc FROM Breed ORDER BY breedId DESC",
+                          |(breedId, breedName, breedDesc)| BreedDB { breedId, breedName, breedDesc })?)
+    }
+    pub fn breed_insert_or(&self, breed: BreedPost) -> Result<u32> {
+        let mut conn = self.conn()?;
+        match conn.exec_drop("INSERT Breed (breedName,breedDesc) VALUES (?,?)", (breed.name, breed.desc)) {
+            Ok(()) => Ok(conn.last_insert_id() as u32),
+            Err(_) => {
+                // select name
+                let r = conn.exec_first("SELECT breedId,breedName,breedDesc FROM Breed WHERE breedName=?", (breed.name, ))
+                    .map(|row| {
+                        row.map(|(breedId,breedName,breedDesc)| BreedDB { breedId,breedName,breedDesc })
+                    })?;
+                match r {
+                    Some(b) => Ok(b.breedId),
+                    None => Err(anyhow!("can not insert!"))
+                }
+            }
+        }
     }
 }
