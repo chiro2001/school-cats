@@ -13,6 +13,7 @@ use web_sys::{console, HtmlTextAreaElement};
 use cats_api::{Empty, Response};
 use cats_api::places::{PlaceDB, PlacePost};
 use cats_api::posts::{PostDisp, PostsPost};
+use crate::cat::cat_render;
 
 #[function_component]
 pub fn Posts() -> Html {
@@ -76,21 +77,24 @@ pub fn Posts() -> Html {
         let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
         html! {
             <div>
-                <p>{ format!("user: [{}]{}", p.user.uid,
-                    if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</p>
-                <p>{ "发送时间: " } {{
-                    let datetime: DateTime<Local> = p.time.into();
-                    &datetime.format("%m-%d %H:%M").to_string()
-                    }}</p>
-                if !p.text.is_empty() { <p>{ &p.text }</p> }
+            <p>{ format!("user: [{}]{}", p.user.uid,
+                if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }</p>
+            <p>{ "发送时间: " } {{
+                let datetime: DateTime<Local> = p.time.into();
+                &datetime.format("%m-%d %H:%M").to_string()
+                }}</p>
+            if !p.text.is_empty() { <p>{ &p.text }</p> }
+            <div>
+            { for p.images.iter().map(image_render) }
+            </div>
+            if !p.places.is_empty() {
                 <div>
-                { for p.images.iter().map(image_render) }
+                { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}{" "}</span> }) }
                 </div>
-                if !p.places.is_empty() {
-                    <div>
-                    { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}{" "}</span> }) }
-                    </div>
-                }
+            }
+            if !p.cats.is_empty() {
+                <div>{"猫猫: "} { for p.cats.iter().map(cat_render) }</div>
+            }
             </div>
         }
     };
