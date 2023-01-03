@@ -1,5 +1,4 @@
 mod db;
-mod utils;
 
 use warp::{Filter, http};
 use cats_api::*;
