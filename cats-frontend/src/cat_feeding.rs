@@ -11,7 +11,7 @@ use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
 use crate::cat::cat_disp_render;
 use crate::user::load_user_local;
-use crate::utils::node_str;
+use crate::utils::{node_str, reload};
 
 #[function_component]
 pub fn CatToFeed() -> Html {
@@ -99,6 +99,7 @@ pub fn CatFeedingRegister() -> Html {
                 };
                 fetch(Method::POST, format!("{}/feeding", API).as_str(), p)
                     .await.unwrap_or(Response::default_error(Empty::default()));
+                reload();
             })
         })
     };

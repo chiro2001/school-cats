@@ -375,6 +375,7 @@ impl Database {
         }
     }
     pub fn feeding_insert(&self, f: FeedingDB) -> Result<()> {
+        info!("feeding_insert: {:?}", f);
         let mut conn = self.conn()?;
         let time: DateTime<Utc> = f.feedTime.clone().into();
         let time: NaiveDateTime = time.naive_utc();
@@ -384,7 +385,7 @@ impl Database {
     }
     pub fn feeding_last(&self, id: u32) -> Result<FeedingDB> {
         let mut conn = self.conn()?;
-        let r = conn.exec_first("SELECT catId,userId,placeId,feedTime,feedFood,feedAmount FROM Feed ORDER BY catId DESC WHERE catId=?", (id, ))
+        let r = conn.exec_first("SELECT catId,userId,placeId,feedTime,feedFood,feedAmount FROM Feed WHERE catId=? ORDER BY feedTime DESC", (id, ))
             .map(|r| r.map(|(catId, userId, placeId, feedTime, feedFood, feedAmount)| {
                 FeedingDB { catId, userId, placeId, feedTime: chrono2sys(feedTime), feedFood, feedAmount }
             }))?;
@@ -400,6 +401,7 @@ impl Database {
             (cat, self.feeding_last(id).unwrap_or(FeedingDB::default()))
         })
             .filter(|f| f.0.catId > 0).collect::<Vec<(CatDB, FeedingDB)>>();
+        info!("(cat db, feeding db): {:?}", r);
         let r = r.into_iter().map(|f| {
             let id = f.1.userId;
             (f.0, f.1, self.user(id).unwrap_or(User::default()))
@@ -409,6 +411,7 @@ impl Database {
             .filter(|f| f.0.catId > 0)
             .map(|f| FeedingInfo { cat: f.0, last: f.1, user: f.2 })
             .collect::<Vec<FeedingInfo>>();
+        info!("r: {:?}", r);
         Ok(r)
     }
 }
