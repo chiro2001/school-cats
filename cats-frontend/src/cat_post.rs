@@ -2,21 +2,24 @@
 
 use std::collections::HashSet;
 use std::ops::Deref;
+use anyhow::anyhow;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use chrono::{DateTime, Local};
 use gloo::console::console;
-use gloo_net::http::Method;
+use gloo_net::http::{Method, Request};
 use yew::{Callback, html, Html, NodeRef, use_effect_with_deps, use_state, UseStateHandle};
 use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
-use web_sys::{console, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{Blob, console, EventTarget, File, FileList, FileReader, FormData, HtmlInputElement, HtmlTextAreaElement};
 use cats_api::{Empty, Response};
 use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
 use cats_api::posts::{CommentDisp, CommentPost, PostDisp, PostsPost};
 use crate::cat::cat_render;
 use crate::routes::Route;
+use anyhow::Result;
+use js_sys::ArrayBuffer;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct PostItemProps {
@@ -96,19 +99,72 @@ pub fn Posts() -> Html {
     let places_selected: UseStateHandle<Vec<PlaceDB>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
     let input_file = NodeRef::default();
+    let files_uploaded: UseStateHandle<HashSet<String>> = use_state(|| HashSet::new());
     let input_file_change = {
+        let input_file = input_file.clone();
+        let images = images.clone();
+        let files_uploaded = files_uploaded.clone();
         Callback::from(move |_| {
-
+            let i: HtmlInputElement = input_file.cast::<HtmlInputElement>().unwrap();
+            let files: FileList = i.files().unwrap();
+            let len = files.length();
+            let form: FormData = FormData::new().unwrap();
+            let mut ready_filenames: Vec<String> = vec![];
+            for index in 0..len {
+                let f: File = files.item(index).unwrap();
+                console::log_1(&f.name().into());
+                if files_uploaded.deref().contains(&f.name()) { continue; }
+                ready_filenames.push(f.name());
+                let reader: FileReader = FileReader::new().unwrap();
+                // let event_target: EventTarget = reader.cast().unwrap();
+                // let data: ArrayBuffer = reader.read_as_array_buffer(&f).unwrap();
+                // let blob = Blob::new_with_blob_sequence(&data).unwrap();
+                let blob = Blob::new_with_blob_sequence(&f).unwrap();
+                form.append_with_blob_and_filename(
+                    "file",
+                    &blob,
+                    &f.name(),
+                ).unwrap();
+            }
+            let mut new_set = files_uploaded.deref().clone();
+            for f in ready_filenames {
+                new_set.insert(f);
+            }
+            let images = images.clone();
+            let files_uploaded = files_uploaded.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let urls: Result<Vec<String>> = match Request::new(format!("{}/upload", API).as_str())
+                    .body(form)
+                    .send()
+                    .await {
+                    Ok(r) => {
+                        match r.json().await {
+                            Ok(v) => Ok(v),
+                            Err(e) => Err(anyhow!("{:?}", e))
+                        }
+                    }
+                    Err(e) => {
+                        console::error_1(&e.to_string().into());
+                        Err(anyhow!("{:?}", e))
+                    }
+                };
+                match urls {
+                    Ok(urls) => {
+                        files_uploaded.set(new_set);
+                        let mut list = images.to_vec();
+                        for u in urls { list.push(u); }
+                        images.set(list);
+                    }
+                    Err(e) => {
+                        console::error_1(&e.to_string().into());
+                    }
+                };
+            });
         })
     };
     let push_image = {
-        let images = images.clone();
         let input_file = input_file.clone();
         Callback::from(move |_| {
-            // console::log_2(&"text:".into(), &textarea.cast::<HtmlTextAreaElement>().unwrap().value().into());
-            // let mut imgs = images.to_vec();
-            // imgs.push("https://yew.rs/img/logo.png".to_string());
-            // images.set(imgs);
             let input_file = input_file.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 let i: HtmlInputElement = input_file.cast::<HtmlInputElement>().unwrap();
@@ -246,7 +302,7 @@ pub fn Posts() -> Html {
                     <button onclick={select_place}>{ "选择地点" }</button>
                     <input ref={place_input}/><button onclick={add_place}>{ "添加新地点" }</button>
                 </div>
-                <input ref={input_file} type="file" style="display: none;" onchange={input_file_change}/>
+                <input ref={input_file} type="file" style="display: none;" onchange={input_file_change} accept="image/png,.jpg"/>
                 <button onclick={push_image}>{ "添加图片" }</button>
                 <button onclick={post}>{ "发布猫猫贴" }</button>
             </span>

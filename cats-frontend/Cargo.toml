@@ -17,7 +17,9 @@ web-sys = { version = "0.3.60", features = [
     'RequestInit',
     'RequestMode',
     'Response',
-    'Window'
+    'Window',
+    'FileReader',
+    'FileReaderSync'
 ] }
 yew = { version = "0.20", features = ["csr"] }
 yew-router = "0.17.0"
@@ -29,3 +31,4 @@ anyhow = "1.0.68"
 serde_json = "1.0.91"
 gloo = "0.8.0"
 chrono = "0.4.23"
+js-sys = "0.3.60"
