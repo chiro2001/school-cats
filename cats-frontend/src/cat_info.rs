@@ -141,6 +141,16 @@ pub fn Information() -> Html {
         <button onclick={onclick_add}>{ "添加" }</button>
         </>
         <h3>{ "管理猫猫" }</h3>
+        <Manager/>
+        </>
+    }
+}
+
+#[function_component]
+pub fn Manager() -> Html {
+    let cats: UseStateHandle<Vec<CatDB>> = use_state(|| vec![]);
+    html! {
+        <>
         </>
     }
 }

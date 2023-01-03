@@ -169,6 +169,14 @@ async fn main() -> Result<()> {
         }));
 
     let dbc = db.clone();
+    let cat_get = warp::get()
+        .and(warp::path("cat"))
+        .map(move || warp::reply::json(&match dbc.cats() {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), vec![]),
+        }));
+
+    let dbc = db.clone();
     let breed_get = warp::get()
         .and(warp::path("breed"))
         .map(move || warp::reply::json(&match dbc.breed_list() {
@@ -199,6 +207,7 @@ async fn main() -> Result<()> {
             .or(place_post)
             .or(place_get)
             .or(cat_post)
+            .or(cat_get)
             .or(breed_get)
             .or(breed_post)
     ).with(cors);
