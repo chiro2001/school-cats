@@ -268,6 +268,19 @@ pub fn Information() -> Html {
             });
         }, ());
     };
+    let breed_desc = use_state(|| "".to_string());
+    let breed_change = {
+        let input = input.breed.clone();
+        let breeds = breeds.clone();
+        let breed_desc = breed_desc.clone();
+        Callback::from(move |_| {
+            let v = node_str(&input);
+            console!(format!("{:?}", v));
+            let _ = breeds.deref().iter().filter(|b| b.breedId.to_string() == v).map(|b| {
+                breed_desc.set(b.breedDesc.to_string());
+            }).collect::<Vec<()>>();
+        })
+    };
     html! {
         <>
         <h2>{ "登记信息" }</h2>
@@ -280,9 +293,9 @@ pub fn Information() -> Html {
         <h3>{ "添加猫猫" }</h3>
         <>
         <span>{ "名字" }<input ref={input.name}/></span><br/>
-        <span>{ "品种" }<select ref={input.breed}>
+        <span>{ "品种" }<select ref={input.breed} onchange={breed_change}>
         { for breeds.iter().map(|breed| html!{ <option value={breed.breedId.to_string()}>{breed.breedName.to_string()}</option> })}
-        </select></span><br/>
+        </select></span><span>{ &*breed_desc }</span><br/>
         <span>{ "发现时间" }<input ref={input.found_time} type="datetime-local" value={time_fmt(chrono::Local::now())}/></span><br/>
         <span>{ "来源" }<input ref={input.source}/></span><br/>
         <button onclick={onclick_add}>{ "添加" }</button>
