@@ -77,10 +77,8 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
                    ("", "", 1, "", "", ))?;
     assert_eq!(1, conn.last_insert_id());
     // insert default place
-    conn.query_drop("INSERT INTO Place (details) VALUES (\"未知\")")?;
+    conn.query_drop("INSERT INTO Place (details) VALUES (\"三食堂门口\")")?;
     assert_eq!(1, conn.last_insert_id());
-    conn.query_drop("INSERT INTO Place (details) VALUES (\"未知2\")")?;
-    assert_eq!(2, conn.last_insert_id());
     // insert default breed
     conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"\")")?;
     assert_eq!(1, conn.last_insert_id());
@@ -89,18 +87,14 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(1, conn.last_insert_id());
-    let cat = CatDB::default();
-    conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
-        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
-    assert_eq!(2, conn.last_insert_id());
     // insert test post
     conn.exec_drop("INSERT INTO PostContent (userId,postTime,postText) VALUES (?,?,?)",
                    (1, Utc::now().naive_utc(), "Text"))?;
     assert_eq!(1, conn.last_insert_id());
     conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)",
-                   (1, 2))?;
+                   (1, 1))?;
     conn.exec_drop("INSERT INTO PostCat (postId,catId) VALUES (?,?)",
-                   (1, 2))?;
+                   (1, 1))?;
     // insert test comment
     conn.exec_drop("INSERT INTO PostComment (postId,userId,commentText) VALUES (?,?,?)",
                    (1, 1, "CommentText"))?;
