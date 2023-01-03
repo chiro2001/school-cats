@@ -13,6 +13,7 @@ use mysql::*;
 use mysql::prelude::*;
 use cats_api::cats::{BreedDB, BreedPost, CatDB, CatPlacesResponse};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
+use cats_api::places::PlaceDB;
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
 use cats_api::user::{User, UserDB};
 use crate::utils::chrono2sys;
@@ -209,6 +210,10 @@ impl Database {
         conn.exec_drop("INSERT INTO Place (details) VALUES (?)", (details, ))?;
         Ok(conn.last_insert_id() as u32)
     }
+    pub fn place_list(&self) -> Result<Vec<PlaceDB>> {
+        let mut conn = self.conn()?;
+        Ok(conn.query_map("SELECT placeId,details FROM Place ORDER BY placeId", |(id, details)| PlaceDB { id, details })?)
+    }
     pub fn user_insert(&self, user: UserDB) -> Result<u32> {
         let mut conn = self.conn()?;
         info!("insert user: {:?}", user);
@@ -337,7 +342,7 @@ impl Database {
                 // select name
                 let r = conn.exec_first("SELECT breedId,breedName,breedDesc FROM CatBreed WHERE breedName=?", (breed.name, ))
                     .map(|row| {
-                        row.map(|(breedId,breedName,breedDesc)| BreedDB { breedId,breedName,breedDesc })
+                        row.map(|(breedId, breedName, breedDesc)| BreedDB { breedId, breedName, breedDesc })
                     })?;
                 match r {
                     Some(b) => Ok(b.breedId),

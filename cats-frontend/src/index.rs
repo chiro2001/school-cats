@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use std::collections::HashSet;
 use std::ops::Deref;
 use chrono::{DateTime, Local, Utc};
 use gloo_net::http::Method;
@@ -12,7 +13,7 @@ use crate::user::load_user;
 use yew_router::prelude::*;
 use cats_api::{Empty, Response};
 use cats_api::cats::{BreedDB, BreedPost, CatDB, CatPlacesResponse};
-use cats_api::places::PlacePost;
+use cats_api::places::{PlaceDB, PlacePost};
 use cats_api::posts::{PostDisp, PostsPost};
 use cats_api::utils::{chrono2sys, time_fmt};
 use crate::api::{API, fetch};
@@ -61,19 +62,24 @@ fn CatsFeedings() -> Html {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-struct PlaceItem {
-    pub id: u32,
-    pub details: String,
-}
-
 #[function_component]
 fn Posts() -> Html {
     let posts: UseStateHandle<Vec<PostDisp>> = use_state(|| vec![]);
     let images: UseStateHandle<Vec<String>> = use_state(|| vec![]);
-    let places: UseStateHandle<Vec<PlaceItem>> = use_state(|| vec![]);
+    let places: UseStateHandle<Vec<PlaceDB>> = use_state(|| vec![]);
+    let places_selected: UseStateHandle<Vec<PlaceDB>> = use_state(|| vec![]);
     let textarea = NodeRef::default();
-    let place_input = NodeRef::default();
+    {
+        let places = places.clone();
+        use_effect_with_deps(move |_| {
+            wasm_bindgen_futures::spawn_local(async move {
+                let list: Vec<PlaceDB> = fetch(
+                    Method::GET, format!("{}/place", API).as_str(),
+                    Empty::default()).await.unwrap_or(Response::default_error(vec![])).data;
+                places.set(list);
+            });
+        }, ());
+    };
     let push_image = {
         let images = images.clone();
         let textarea = textarea.clone();
@@ -86,12 +92,12 @@ fn Posts() -> Html {
     };
     let post = {
         let images = images.clone();
-        let places = places.clone();
+        let places_selected = places_selected.clone();
         let textarea = textarea.clone();
         Callback::from(move |_| {
             let text: String = textarea.cast::<HtmlTextAreaElement>().unwrap().value();
             let images = images.to_vec();
-            let places = places.to_vec().into_iter().map(|i| i.id).collect::<Vec<u32>>();
+            let places = places_selected.to_vec().into_iter().map(|i| i.id).collect::<Vec<u32>>();
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<Empty> = fetch(
                     Method::POST, format!("{}/post", API).as_str(),
@@ -136,22 +142,37 @@ fn Posts() -> Html {
             </div>
         }
     };
+    let place_input = NodeRef::default();
+    let place_select = NodeRef::default();
     let add_place = {
-        let places = places.clone();
         let place_input = place_input.clone();
         Callback::from(move |_| {
-            let places = places.clone();
-            let text: String = place_input.cast::<HtmlTextAreaElement>().unwrap().value();
+            let text: String = node_str(&place_input);
             if text.is_empty() { return; }
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<u32> = fetch(Method::POST, format!("{}/place", API).as_str(), PlacePost { details: text.to_string() })
                     .await.unwrap_or(Response::default_error(0));
-                let mut list = places.to_vec();
                 if r.code != 0 {
-                    list.push(PlaceItem { id: r.data, details: text });
-                    places.set(list);
+                    reload();
                 }
             });
+        })
+    };
+    let select_place = {
+        let places = places.clone();
+        let places_selected = places_selected.clone();
+        let place_select = place_select.clone();
+        Callback::from(move |_| {
+            let mut list = places_selected.to_vec();
+            let s: HashSet<PlaceDB> = HashSet::from_iter(list.iter().map(|p| p.copy()));
+            let id = node_str(&place_select);
+            let _ = places.deref().iter().filter(|p| p.id.to_string() == id).map(|p| {
+                if !s.contains(p) {
+                    console!(format!("using place: {:?}", p));
+                    list.push(p.copy());
+                }
+            }).collect::<Vec<_>>();
+            places_selected.set(list);
         })
     };
     html! {
@@ -168,9 +189,12 @@ fn Posts() -> Html {
                     { for images.iter().map(|i: &String| html! {<img src={i.clone()}/>}) }
                 </ul>
                 <div>
-                    <p>{ "地点: " }<span>{ for places.iter().map(|p: &PlaceItem| html! {<>{p.details.to_string()}{" "}</>}) }</span></p>
-                    <input ref={place_input}/>
-                    <button onclick={add_place}>{ "添加地点" }</button>
+                    <span>{ "地点: " }<span>{ for places_selected.iter().map(|p: &PlaceDB| html! {<>{p.details.to_string()}{" "}</>}) }</span></span><br/>
+                    <select ref={place_select}>
+                        { for places.iter().map(|p: &PlaceDB| html! { <option value={p.id.to_string()}>{p.details.to_string()}</option> })}
+                    </select>
+                    <button onclick={select_place}>{ "选择地点" }</button>
+                    <input ref={place_input}/><button onclick={add_place}>{ "添加新地点" }</button>
                 </div>
                 <button onclick={push_image}>{ "添加图片" }</button>
                 <button onclick={post}>{ "发布猫猫贴" }</button>
