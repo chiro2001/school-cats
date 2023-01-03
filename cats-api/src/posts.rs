@@ -39,13 +39,13 @@ pub struct CommentDB {
     pub commentText: String,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct CommentDisp {
     pub user: User,
     pub text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PostDisp {
     pub postId: u32,
     pub text: String,
@@ -55,6 +55,21 @@ pub struct PostDisp {
     pub comments: Vec<CommentDisp>,
     pub places: Vec<String>,
     pub cats: Vec<CatDB>,
+}
+
+impl PostDisp {
+    pub fn copy(&self) -> Self {
+        Self{
+            postId: self.postId,
+            text: self.text.to_string(),
+            time: self.time,
+            user: self.user.clone(),
+            images: self.images.clone(),
+            comments: self.comments.clone(),
+            places: self.places.clone(),
+            cats: self.cats.clone(),
+        }
+    }
 }
 
 impl Default for PostDisp {

@@ -11,12 +11,67 @@ use yew::{Callback, html, Html, NodeRef, use_effect_with_deps, use_state, UseSta
 use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
 use web_sys::{console, HtmlTextAreaElement};
+use yew::html::ImplicitClone;
 use cats_api::{Empty, Response};
 use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
 use cats_api::posts::{CommentDisp, PostDisp, PostsPost};
 use crate::cat::cat_render;
 use crate::routes::Route;
+
+#[derive(Clone, PartialEq)]
+pub struct PostDisp2(PostDisp);
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct PostItemProps {
+    pub d: PostDisp,
+}
+
+impl ImplicitClone for PostDisp2 {
+
+}
+
+#[function_component]
+pub fn PostItem(props: &PostItemProps) -> Html {
+    let p = &props.d;
+    let comment_render: fn(&CommentDisp) -> Html = |c| {
+        html! {
+            <ul>
+                <Link<Route> to={Route::UserInfo{id: c.user.uid}}>{ format!("[{}]{}", c.user.uid,
+                    if !c.user.usernick.is_empty() { c.user.usernick.as_str() } else { c.user.username.as_str() }) }
+                </Link<Route>>{": "}
+                <span>{c.text.to_string()}</span>
+            </ul>
+        }
+    };
+    let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
+    html! {
+        <ul>
+        <Link<Route> to={Route::UserInfo{id: p.user.uid}}>{ format!("user: [{}]{}", p.user.uid,
+            if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }
+        </Link<Route>>
+        <span>{{
+            let datetime: DateTime<Local> = p.time.into();
+            &datetime.format("%m-%d %H:%M").to_string()
+            }}</span><br/>
+        if !p.text.is_empty() { <p>{ &p.text }</p> }
+        <div>
+        { for p.images.iter().map(image_render) }
+        </div>
+        if !p.places.is_empty() {
+            <div>
+            { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}{" "}</span> }) }
+            </div>
+        }
+        if !p.cats.is_empty() {
+            <div>{"猫猫: "} { for p.cats.iter().map(cat_render) }</div>
+        }
+        if !p.comments.is_empty() {
+            <div>{"评论: "}<br/>{ for p.comments.iter().map(comment_render) }</div>
+        }
+        </ul>
+    }
+}
 
 #[function_component]
 pub fn Posts() -> Html {
@@ -78,45 +133,6 @@ pub fn Posts() -> Html {
                 posts.set(r.data);
             });
         }, ());
-    };
-    let post_render: fn(&PostDisp) -> Html = |p| {
-        let comment_render: fn(&CommentDisp) -> Html = |c| {
-            html! {
-            <ul>
-                <Link<Route> to={Route::UserInfo{id: c.user.uid}}>{ format!("[{}]{}", c.user.uid,
-                    if !c.user.usernick.is_empty() { c.user.usernick.as_str() } else { c.user.username.as_str() }) }
-                </Link<Route>>{": "}
-                <span>{c.text.to_string()}</span>
-            </ul>
-        }
-        };
-        let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
-        html! {
-            <ul>
-            <Link<Route> to={Route::UserInfo{id: p.user.uid}}>{ format!("user: [{}]{}", p.user.uid,
-                if !p.user.usernick.is_empty() { p.user.usernick.as_str() } else { p.user.username.as_str() }) }
-            </Link<Route>>
-            <span>{{
-                let datetime: DateTime<Local> = p.time.into();
-                &datetime.format("%m-%d %H:%M").to_string()
-                }}</span><br/>
-            if !p.text.is_empty() { <p>{ &p.text }</p> }
-            <div>
-            { for p.images.iter().map(image_render) }
-            </div>
-            if !p.places.is_empty() {
-                <div>
-                { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}{" "}</span> }) }
-                </div>
-            }
-            if !p.cats.is_empty() {
-                <div>{"猫猫: "} { for p.cats.iter().map(cat_render) }</div>
-            }
-            if !p.comments.is_empty() {
-                <div>{"评论: "}<br/>{ for p.comments.iter().map(comment_render) }</div>
-            }
-            </ul>
-        }
     };
     let place_input = NodeRef::default();
     let place_select = NodeRef::default();
@@ -183,7 +199,7 @@ pub fn Posts() -> Html {
     html! {
     <>
         <h2>{ "猫猫贴" }</h2>
-        { for posts.deref().iter().map(post_render) }
+        { for posts.deref().iter().map(|p| html! { <PostItem d={p.copy()}/>}) }
         <h4>{ "新的猫猫贴" }</h4>
         <div>
             <span>
