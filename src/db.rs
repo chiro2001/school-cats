@@ -11,7 +11,7 @@ use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
 use mysql::prelude::*;
-use cats_api::cats::CatDB;
+use cats_api::cats::{CatDB, CatPlacesResponse};
 use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
 use cats_api::posts::{CommentDisp, PostDisp, PostsContentDB, PostsPost};
 use cats_api::user::{User, UserDB};
@@ -240,13 +240,16 @@ impl Database {
         }
         Ok(id_post)
     }
+    fn select_cat_mapper(s: (u32, u32, String, NaiveDateTime, String, bool, String, String)) -> CatDB {
+        let (catId, breedId, name, foundTime, source, atSchool, whereabouts, health) = s;
+        let foundTime = chrono2sys(foundTime);
+        CatDB { catId, breedId, name, foundTime, source, atSchool, whereabouts, health }
+    }
     pub fn post_data(&self, id: u32) -> Result<PostDisp> {
         let mut conn = self.conn()?;
-        let f: fn((u32, u32, String, NaiveDateTime, String, bool, String, String)) -> CatDB = |(catId, breedId, name, foundTime, source, atSchool, whereabouts, health)|
-            CatDB { catId, breedId, name, foundTime: chrono2sys(foundTime), source, atSchool, whereabouts, health };
         let cats = conn.exec_map("SELECT Cat.catId,Cat.breedId,Cat.name,Cat.foundTime,Cat.source,Cat.atSchool,Cat.whereabouts,Cat.health  \
             FROM PostContent JOIN PostCat ON PostContent.postId=PostCat.postId \
-            JOIN Cat ON PostCat.catId=Cat.catId WHERE PostContent.postId=?", (id, ), f)?;
+            JOIN Cat ON PostCat.catId=Cat.catId WHERE PostContent.postId=?", (id, ), Self::select_cat_mapper)?;
         info!("[{}] cats: {:?}", id, cats);
         #[allow(unused_parens)]
             let f = |(x)| x;
@@ -290,10 +293,30 @@ impl Database {
         info!("post_list: {:?}", posts);
         Ok(posts)
     }
+    #[allow(dead_code)]
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
         let mut conn = self.conn()?;
         conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
         Ok(conn.last_insert_id() as u32)
+    }
+    pub fn cats(&self) -> Result<Vec<CatDB>> {
+        let mut conn = self.conn()?;
+        Ok(conn.query_map("SELECT catId, breedId, name, foundTime, source, atSchool, whereabouts, health FROM Cat ORDER BY catId DESC", Self::select_cat_mapper)?)
+    }
+    pub fn cats_places(&self) -> Result<Vec<CatPlacesResponse>> {
+        let mut conn = self.conn()?;
+        let cats = self.cats()?;
+        #[allow(unused_parens)]
+        Ok(cats.into_iter().map(|cat| {
+            let places: Vec<String> = match conn.exec_map("SELECT Place.details FROM PostCat \
+                JOIN PostPlace ON PostPlace.postId=PostCat.postId \
+                JOIN Place ON Place.placeId=PostPlace.postId \
+                WHERE PostCat.catId=?", (cat.catId, ), |(s)| s) {
+                Ok(s) => s,
+                Err(_) => vec![],
+            };
+            CatPlacesResponse { cat, places }
+        }).filter(|c| !c.places.is_empty()).collect())
     }
 }

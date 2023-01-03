@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
+use std::fmt::format;
 use std::ops::Deref;
-use std::time::SystemTime;
 use chrono::{DateTime, Utc};
 use gloo_net::http::Method;
 use serde::{Deserialize, Serialize};
@@ -12,13 +12,41 @@ use crate::routes::Route;
 use crate::user::load_user;
 use yew_router::prelude::*;
 use cats_api::{Empty, Response};
+use cats_api::cats::CatPlacesResponse;
 use cats_api::posts::{PostDisp, PostsPost};
 use crate::api::{API, fetch};
 
 #[function_component]
 fn CatsMap() -> Html {
+    let places: UseStateHandle<Vec<CatPlacesResponse>> = use_state(|| vec![]);
+    let loading = use_state(|| true);
+    {
+        let places = places.clone();
+        let loading = loading.clone();
+        use_effect_with_deps(move |_| {
+            wasm_bindgen_futures::spawn_local(async move {
+                let p = fetch(Method::GET, format!("{}/cat_places", API).as_str(), Empty::default())
+                    .await.unwrap_or(vec![]);
+                places.set(p);
+                loading.set(false);
+            });
+        }, ());
+    };
+    let render: fn(&CatPlacesResponse) -> Html = |c| {
+        html! {
+            <span>
+            <span>{ format!("[{}] {}: ", c.cat.catId, c.cat.name) }</span>
+            <span>{ for c.places.iter() }</span>
+            </span>
+        }
+    };
     html! {
+        <>
         <h2>{ "猫猫地图" }</h2>
+        <ul>
+        { for places.deref().iter().map(render) }
+        </ul>
+        </>
     }
 }
 
@@ -96,7 +124,7 @@ fn Posts() -> Html {
                 </div>
                 if !p.places.is_empty() {
                     <div>
-                    { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}</span> }) }
+                    { "地点: " } { for p.places.iter().map(|s| html! { <span>{s}{" "}</span> }) }
                     </div>
                 }
             </div>
@@ -142,10 +170,6 @@ pub fn IndexPage() -> Html {
     let common = html! {
         <>
             <h1>{ "主页" }</h1>
-            <p>{ match &*user {
-                None => "None".to_string(),
-                Some(u) => format!("{:?}", u).to_string(),
-            } }</p>
             <CatsMap/>
             <CatsFeedings/>
             <Posts/>

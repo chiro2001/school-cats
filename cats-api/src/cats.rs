@@ -29,3 +29,9 @@ impl Default for CatDB {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CatPlacesResponse {
+    pub cat: CatDB,
+    pub places: Vec<String>
+}

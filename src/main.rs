@@ -133,6 +133,14 @@ async fn main() -> Result<()> {
             Err(e) => Response::error(&e.to_string(), vec![]),
         }));
 
+    let dbc = db.clone();
+    let cat_places_get = warp::get()
+        .and(warp::path("cat_places"))
+        .map(move || warp::reply::json(&match dbc.cats_places() {
+            Ok(p) => Response::ok(p),
+            Err(e) => Response::error(&e.to_string(), vec![]),
+        }));
+
     let routes = warp::any().and(
         index
             .or(hello)
@@ -143,6 +151,7 @@ async fn main() -> Result<()> {
             .or(token_refresh)
             .or(post_post)
             .or(post_get)
+            .or(cat_places_get)
     ).with(cors);
 
     warp::serve(routes).run(([127, 0, 0, 1], PORT)).await;
