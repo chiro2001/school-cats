@@ -11,8 +11,8 @@ pub struct Claims {
 
 /// normal token exp: 1h
 pub const EXP_TOKEN: u64 = 1 * 60 * 60;
-/// refresh token exp: 24h
-pub const EXP_REFRESH: u64 = 24 * 60 * 60;
+/// refresh token exp: 30 days
+pub const EXP_REFRESH: u64 = 30 * 24 * 60 * 60;
 
 pub fn jwt_secrets() -> String {
     match std::env::var("JWT_SECRETS") {
