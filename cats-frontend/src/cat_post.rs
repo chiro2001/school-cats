@@ -115,15 +115,31 @@ pub fn Posts() -> Html {
                 console::log_1(&f.name().into());
                 if files_uploaded.deref().contains(&f.name()) { continue; }
                 ready_filenames.push(f.name());
-                let reader: FileReader = FileReader::new().unwrap();
+                // let reader: FileReader = FileReader::new().unwrap();
+                let name = f.name();
+                let b = Blob::from(f);
+                // let b = gloo_file::Blob::from(f);
+                // gloo_file::callbacks::read_as_bytes(&b, |data| {
+                //     match data {
+                //         Ok(data) => {
+                //             let blob = Blob::new_with_u8_array_sequence(&data.into()).unwrap();
+                //             form.append_with_blob_and_filename(
+                //                 "file",
+                //                 &blob,
+                //                 &f.name(),
+                //             ).unwrap();
+                //         }
+                //         Err(e) => console::error_1(&e.to_string().into())
+                //     }
+                // });
                 // let event_target: EventTarget = reader.cast().unwrap();
                 // let data: ArrayBuffer = reader.read_as_array_buffer(&f).unwrap();
                 // let blob = Blob::new_with_blob_sequence(&data).unwrap();
-                let blob = Blob::new_with_blob_sequence(&f).unwrap();
+                // let blob = Blob::new_with_blob_sequence(&f).unwrap();
                 form.append_with_blob_and_filename(
                     "file",
-                    &blob,
-                    &f.name(),
+                    &b,
+                    &name,
                 ).unwrap();
             }
             let mut new_set = files_uploaded.deref().clone();
@@ -133,7 +149,7 @@ pub fn Posts() -> Html {
             let images = images.clone();
             let files_uploaded = files_uploaded.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                let urls: Result<Vec<String>> = match Request::new(format!("{}/upload", API).as_str())
+                let urls: Result<Vec<String>> = match Request::post(format!("{}/upload", API).as_str())
                     .body(form)
                     .send()
                     .await {
