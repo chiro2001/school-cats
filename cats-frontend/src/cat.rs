@@ -30,7 +30,7 @@ pub fn CatsMap() -> Html {
         html! {
             <span>
             <span>{cat_render(&c.cat)}</span>
-            <span>{ for c.places.iter() }</span>
+            <span>{ for c.places.iter().map(|s| html! {<span>{s.to_string()}{" "}</span>}) }</span>
             <br/>
             </span>
         }

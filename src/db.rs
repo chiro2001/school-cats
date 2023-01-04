@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::Add;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use encoding::{DecoderTrap, Encoding};
@@ -80,23 +80,25 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.query_drop("INSERT INTO Place (details) VALUES (\"三食堂门口\")")?;
     assert_eq!(1, conn.last_insert_id());
     // insert default breed
-    conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"\")")?;
+    conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"普通小猫\")")?;
     assert_eq!(1, conn.last_insert_id());
     // insert default cat
-    let cat = CatDB::default();
+    let cat = CatDB { name: "小白".to_string(), ..CatDB::default() };
+    let datetime: DateTime<Utc> = cat.foundTime.into();
+    let time = datetime.naive_utc();
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
-        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
+        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, time, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(1, conn.last_insert_id());
     // insert test post
     conn.exec_drop("INSERT INTO PostContent (userId,postTime,postText) VALUES (?,?,?)",
-                   (1, Utc::now().naive_utc(), "Text"))?;
+                   (1, Utc::now().naive_utc(), "在门口看到了哦"))?;
     assert_eq!(1, conn.last_insert_id());
     conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)",
                    (1, 1))?;
     conn.exec_drop("INSERT INTO PostCat (postId,catId) VALUES (?,?)",
                    (1, 1))?;
     // insert test comment
-    conn.exec_drop("INSERT INTO CommentContent (commentText) VALUES (?)", ("测试评论", ))?;
+    conn.exec_drop("INSERT INTO CommentContent (commentText) VALUES (?)", ("不知道它喜不喜欢吃干脆面…", ))?;
     conn.exec_drop("INSERT INTO PostComment (postId,userId,commentId) VALUES (?,?,?)",
                    (1, 1, 1))?;
     Ok(())
@@ -293,8 +295,10 @@ impl Database {
     }
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
         let mut conn = self.conn()?;
+        let datetime: DateTime<Utc> = cat.foundTime.into();
+        let time = datetime.naive_utc();
         conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
-        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, cat.foundTime.duration_since(UNIX_EPOCH)?, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
+        VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, time, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
         Ok(conn.last_insert_id() as u32)
     }
     pub fn cats(&self) -> Result<Vec<CatDB>> {
