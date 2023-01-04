@@ -25,6 +25,10 @@ pub struct PostItemProps {
     pub d: PostDisp,
 }
 
+pub fn image_render(s: &String) -> Html {
+    html! { <img src={s.to_string()} style="max-width: 400px"/> }
+}
+
 #[function_component]
 pub fn PostItem(props: &PostItemProps) -> Html {
     let p = &props.d;
@@ -39,7 +43,6 @@ pub fn PostItem(props: &PostItemProps) -> Html {
             </ul>
         }
     };
-    let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()} style="max-width: 400px"/> };
     let comment_input = NodeRef::default();
     let post_comment = {
         let comment_input = comment_input.clone();
@@ -284,7 +287,7 @@ pub fn Posts() -> Html {
                 </select><button onclick={select_cat}>{ "选择猫猫" }</button>
                 <p>{ "猫猫图" }</p>
                 <ul>
-                    { for images.iter().map(|i: &String| html! {<img src={i.clone()}/>}) }
+                    { for images.iter().map(image_render) }
                 </ul>
                 <div>
                     <span>{ "地点: " }<span>{ for places_selected.iter().map(|p: &PlaceDB| html! {<>{p.details.to_string()}{" "}</>}) }</span></span><br/>
