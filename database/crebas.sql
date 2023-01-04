@@ -42,13 +42,6 @@ drop table if exists Treat;
 
 drop table if exists User;
 
-create table Place
-(
-   placeId              int not null auto_increment,
-   details              varchar(32) not null,
-   primary key (placeId)
-);
-
 create table Image
 (
    imageId              int not null auto_increment,
@@ -68,6 +61,13 @@ create table User
    unique key AK_Identifier_2 (username),
    constraint FK_Relationship_9 foreign key (imageId)
       references Image (imageId) on delete restrict on update restrict
+);
+
+create table Place
+(
+   placeId              int not null auto_increment,
+   details              varchar(32) not null,
+   primary key (placeId)
 );
 
 create table CatBreed
@@ -101,10 +101,10 @@ create table Appear
    catId                int not null,
    appearTime           datetime,
    primary key (placeId, userId, catId),
-   constraint FK_Appear foreign key (placeId)
-      references Place (placeId) on delete restrict on update restrict,
    constraint FK_Appear2 foreign key (userId)
       references User (userId) on delete restrict on update restrict,
+   constraint FK_Appear foreign key (placeId)
+      references Place (placeId) on delete restrict on update restrict,
    constraint FK_Appear3 foreign key (catId)
       references Cat (catId) on delete restrict on update restrict
 );
@@ -136,10 +136,10 @@ create table Feed
    feedFood             varchar(16),
    feedAmount           varchar(16),
    primary key (catId, userId, placeId),
-   constraint FK_Feed foreign key (catId)
-      references Cat (catId) on delete restrict on update restrict,
    constraint FK_Feed2 foreign key (userId)
       references User (userId) on delete restrict on update restrict,
+   constraint FK_Feed foreign key (catId)
+      references Cat (catId) on delete restrict on update restrict,
    constraint FK_Feed3 foreign key (placeId)
       references Place (placeId) on delete restrict on update restrict
 );
@@ -172,10 +172,10 @@ create table PostComment
    userId               int not null,
    commentId            int not null,
    primary key (postId, userId, commentId),
-   constraint FK_PostComment foreign key (postId)
-      references PostContent (postId) on delete restrict on update restrict,
    constraint FK_PostComment2 foreign key (userId)
       references User (userId) on delete restrict on update restrict,
+   constraint FK_PostComment foreign key (postId)
+      references PostContent (postId) on delete restrict on update restrict,
    constraint FK_PostComment3 foreign key (commentId)
       references CommentContent (commentId) on delete restrict on update restrict
 );
@@ -217,12 +217,12 @@ create table Treat
    treatResults         varchar(128),
    treatTime            datetime,
    primary key (placeId, catId, userId),
+   constraint FK_Treat3 foreign key (userId)
+      references User (userId) on delete restrict on update restrict,
    constraint FK_Treat foreign key (placeId)
       references Place (placeId) on delete restrict on update restrict,
    constraint FK_Treat2 foreign key (catId)
-      references Cat (catId) on delete restrict on update restrict,
-   constraint FK_Treat3 foreign key (userId)
-      references User (userId) on delete restrict on update restrict
+      references Cat (catId) on delete restrict on update restrict
 );
 
 create VIEW  FindCatPlaces
@@ -260,7 +260,7 @@ SELECT PostContent.postId,Place.details
 
 
 CREATE TRIGGER CleanToken 
-BEFORE INSERT ON Token 
+BEFORE INSERT ON PostContent 
 FOR EACH ROW
-	DELETE FROM Token WHERE exp > NOW();
+	DELETE FROM Token WHERE exp < NOW();
 
