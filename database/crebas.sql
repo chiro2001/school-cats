@@ -6,6 +6,8 @@ drop VIEW IF EXISTS FindPostComments;
 
 drop VIEW IF EXISTS FindPostCats;
 
+drop VIEW IF EXISTS FindCatPlaces;
+
 drop table if exists Appear;
 
 drop table if exists Cat;
@@ -220,6 +222,12 @@ create table Treat
    constraint FK_Treat3 foreign key (userId)
       references User (userId) on delete restrict on update restrict
 );
+
+create VIEW  FindCatPlaces
+ as
+SELECT PostCat.catId,Place.details FROM PostCat
+                JOIN PostPlace ON PostPlace.postId=PostCat.postId
+                JOIN Place ON Place.placeId=PostPlace.postId;
 
 create VIEW  FindPostCats
  as

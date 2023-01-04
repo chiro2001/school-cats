@@ -322,10 +322,8 @@ impl Database {
         let cats = self.cats()?;
         #[allow(unused_parens)]
         Ok(cats.into_iter().map(|cat| {
-            let places: Vec<String> = match conn.exec_map("SELECT Place.details FROM PostCat \
-                JOIN PostPlace ON PostPlace.postId=PostCat.postId \
-                JOIN Place ON Place.placeId=PostPlace.postId \
-                WHERE PostCat.catId=?", (cat.catId, ), |(s)| s) {
+            let places: Vec<String> = match conn.exec_map("SELECT details FROM FindCatPlaces \
+                WHERE catId=?", (cat.catId, ), |(s)| s) {
                 Ok(s) => s,
                 Err(_) => vec![],
             };
