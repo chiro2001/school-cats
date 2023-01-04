@@ -94,7 +94,7 @@ pub fn CatFeedingRegister() -> Html {
                 let user = load_user_local().await.unwrap_or(User::default());
                 let time = format!("{}:00 +0800", node_str(&input.time)).to_string();
                 let datetime = DateTime::parse_from_str(&time, "%Y-%m-%dT%H:%M:%S %z").unwrap().with_timezone(&Local);
-                let time = chrono2sys(datetime.naive_utc());
+                let time = chrono2sys(datetime.naive_local());
                 let (food, amount) = (node_str(&input.food), node_str(&input.amount));
                 let id_cat = node_str(&input.cat);
                 let id_place = node_str(&input.place);

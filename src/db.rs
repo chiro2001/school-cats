@@ -6,7 +6,7 @@ use std::ops::Add;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Local};
 use encoding::{DecoderTrap, Encoding};
 use log::*;
 use mysql::*;
@@ -41,8 +41,8 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     let mut conn = pool.get_conn().unwrap().unwrap();
     info!("SET FOREIGN_KEY_CHECKS=0;");
     let _: Vec<String> = conn.exec("SET FOREIGN_KEY_CHECKS=0;", Params::Empty)?;
-    info!("SET time_zone='+00:00';");
-    conn.query_drop("SET time_zone='+00:00';")?;
+    // info!("SET time_zone='+00:00';");
+    // conn.query_drop("SET time_zone='+00:00';")?;
     for s in split {
         let t = s.trim();
         if t.is_empty() {
@@ -87,15 +87,15 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"普通小猫\")")?;
     assert_eq!(1, conn.last_insert_id());
     // insert default cat
-    let cat = CatDB { name: "胖橘".to_string(), ..CatDB::default() };
-    let datetime: DateTime<Utc> = cat.foundTime.into();
-    let time = datetime.naive_utc();
+    let cat = CatDB { name: "胖橘".to_string(), foundTime: SystemTime::now(), ..CatDB::default() };
+    let datetime: DateTime<Local> = cat.foundTime.into();
+    let time = datetime.naive_local();
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, time, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
     assert_eq!(1, conn.last_insert_id());
     // insert test post
     conn.exec_drop("INSERT INTO PostContent (userId,postTime,postText) VALUES (?,?,?)",
-                   (1, Utc::now().naive_utc(), "在门口看到了哦"))?;
+                   (1, Local::now().naive_local(), "在门口看到了哦"))?;
     assert_eq!(1, conn.last_insert_id());
     conn.exec_drop("INSERT INTO PostPlace (postId,placeId) VALUES (?,?)",
                    (1, 1))?;
@@ -186,8 +186,8 @@ impl Database {
         let token = jwt_encode(uid, exp)?;
         // add token to database
         let mut conn = self.conn()?;
-        let datetime: DateTime<Utc> = exp.into();
-        let time = datetime.naive_utc();
+        let datetime: DateTime<Local> = exp.into();
+        let time = datetime.naive_local();
         info!("create token with exp {:?}, {:?}", datetime, time);
         conn.exec_drop("INSERT INTO Token (token,exp,uid) VALUES (?,?,?)",
                        (&token, time, uid))?;
@@ -252,7 +252,7 @@ impl Database {
         info!("insert post: {:?}", post);
         // insert text
         conn.exec_drop("INSERT INTO PostContent (userId,postText,postTime) VALUES (?,?,?)",
-                       (uid, post.text, Utc::now().naive_utc()))?;
+                       (uid, post.text, Local::now().naive_local()))?;
         let id_post = conn.last_insert_id() as u32;
         // insert images
         for image in post.images {
@@ -319,8 +319,8 @@ impl Database {
     }
     pub fn cat_insert(&self, cat: CatDB) -> Result<u32> {
         let mut conn = self.conn()?;
-        let datetime: DateTime<Utc> = cat.foundTime.into();
-        let time = datetime.naive_utc();
+        let datetime: DateTime<Local> = cat.foundTime.into();
+        let time = datetime.naive_local();
         conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \
         VALUES (?,?,?,?,?,?,?)", (cat.breedId, cat.name, time, cat.source, cat.atSchool, cat.whereabouts, cat.health))?;
         Ok(conn.last_insert_id() as u32)
@@ -393,8 +393,8 @@ impl Database {
     pub fn feeding_insert(&self, f: FeedingDB) -> Result<()> {
         info!("feeding_insert: {:?}", f);
         let mut conn = self.conn()?;
-        let time: DateTime<Utc> = f.feedTime.clone().into();
-        let time: NaiveDateTime = time.naive_utc();
+        let time: DateTime<Local> = f.feedTime.clone().into();
+        let time: NaiveDateTime = time.naive_local();
         conn.exec_drop("INSERT INTO Feed (catId,userId,placeId,feedTime,feedFood,feedAmount) VALUES (?,?,?,?,?,?)",
                        (f.catId, f.userId, f.placeId, time, f.feedFood, f.feedAmount))?;
         Ok(())

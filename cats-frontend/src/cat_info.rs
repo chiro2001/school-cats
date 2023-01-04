@@ -36,7 +36,7 @@ pub fn Information() -> Html {
             console::log_1(&time.as_str().into());
             let datetime = DateTime::parse_from_str(&time, "%Y-%m-%dT%H:%M:%S %z")?.with_timezone(&Local);
             console::log_1(&format!("datetime: {}", datetime.to_rfc2822()).into());
-            let foundTime = chrono2sys(datetime.naive_utc());
+            let foundTime = chrono2sys(datetime.naive_local());
             // post breed
             let breedId = fetch(
                 Method::GET, format!("{}/breed", API).as_str(),
