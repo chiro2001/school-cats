@@ -11,7 +11,7 @@ use gloo_net::http::{Method, Request};
 use yew::{Callback, html, Html, NodeRef, use_effect_with_deps, use_state, UseStateHandle};
 use crate::api::{API, fetch};
 use crate::utils::{node_str, reload};
-use web_sys::{Blob, console, EventTarget, File, FileList, FileReader, FormData, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{Blob, console, File, FileList, FormData, HtmlInputElement, HtmlTextAreaElement};
 use cats_api::{Empty, Response};
 use cats_api::cats::CatDB;
 use cats_api::places::{PlaceDB, PlacePost};
@@ -19,7 +19,6 @@ use cats_api::posts::{CommentDisp, CommentPost, PostDisp, PostsPost};
 use crate::cat::cat_render;
 use crate::routes::Route;
 use anyhow::Result;
-use js_sys::ArrayBuffer;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct PostItemProps {
@@ -115,32 +114,9 @@ pub fn Posts() -> Html {
                 console::log_1(&f.name().into());
                 if files_uploaded.deref().contains(&f.name()) { continue; }
                 ready_filenames.push(f.name());
-                // let reader: FileReader = FileReader::new().unwrap();
                 let name = f.name();
                 let b = Blob::from(f);
-                // let b = gloo_file::Blob::from(f);
-                // gloo_file::callbacks::read_as_bytes(&b, |data| {
-                //     match data {
-                //         Ok(data) => {
-                //             let blob = Blob::new_with_u8_array_sequence(&data.into()).unwrap();
-                //             form.append_with_blob_and_filename(
-                //                 "file",
-                //                 &blob,
-                //                 &f.name(),
-                //             ).unwrap();
-                //         }
-                //         Err(e) => console::error_1(&e.to_string().into())
-                //     }
-                // });
-                // let event_target: EventTarget = reader.cast().unwrap();
-                // let data: ArrayBuffer = reader.read_as_array_buffer(&f).unwrap();
-                // let blob = Blob::new_with_blob_sequence(&data).unwrap();
-                // let blob = Blob::new_with_blob_sequence(&f).unwrap();
-                form.append_with_blob_and_filename(
-                    "file",
-                    &b,
-                    &name,
-                ).unwrap();
+                form.append_with_blob_and_filename("file", &b, &name).unwrap();
             }
             let mut new_set = files_uploaded.deref().clone();
             for f in ready_filenames {
