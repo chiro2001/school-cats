@@ -10,8 +10,7 @@ pub struct Claims {
 }
 
 /// normal token exp: 1h
-// pub const EXP_TOKEN: u64 = 1 * 60 * 60;
-pub const EXP_TOKEN: u64 = 10;
+pub const EXP_TOKEN: u64 = 1 * 60 * 60;
 /// refresh token exp: 24h
 pub const EXP_REFRESH: u64 = 24 * 60 * 60;
 
