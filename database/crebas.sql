@@ -264,5 +264,5 @@ BEFORE INSERT ON PostContent
 FOR EACH ROW BEGIN
     SET time_zone='+00:00';
 	DELETE FROM Token WHERE exp < NOW();
-END
+END;
 
