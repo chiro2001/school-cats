@@ -261,6 +261,8 @@ SELECT PostContent.postId,Place.details
 
 CREATE TRIGGER CleanToken 
 BEFORE INSERT ON PostContent 
-FOR EACH ROW
+FOR EACH ROW BEGIN
+    SET time_zone='+00:00';
 	DELETE FROM Token WHERE exp < NOW();
+END
 
