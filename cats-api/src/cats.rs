@@ -101,7 +101,7 @@ pub struct BreedDB {
     pub breedDesc: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BreedPost {
     pub name: String,
     pub desc: String,

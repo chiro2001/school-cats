@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::Add;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use encoding::{DecoderTrap, Encoding};
@@ -12,7 +12,7 @@ use log::*;
 use mysql::*;
 use mysql::prelude::*;
 use cats_api::cats::{BreedDB, BreedPost, CatDB, CatDisp, CatPlacesResponse, FeedingDB, FeedingInfo};
-use cats_api::jwt::{EXP_REFRESH, EXP_TOKEN, jwt_encode, TokenDB};
+use cats_api::jwt::{Claims, EXP_REFRESH, EXP_TOKEN, jwt_decode, jwt_encode, TokenDB};
 use cats_api::places::PlaceDB;
 use cats_api::posts::{CommentDisp, CommentPost, PostDisp, PostsContentDB, PostsPost};
 use cats_api::user::{User, UserDB};
@@ -138,15 +138,35 @@ impl Database {
         let r = conn.exec_first("SELECT token,uid FROM Token WHERE token = :token",
                                 params! { "token" => token })
             .map(|row| {
-                row.map(|(token, uid)| TokenDB {
-                    token,
-                    exp: SystemTime::now(),
-                    uid,
+                row.map(|(token, uid)| {
+                    let token: String = token;
+                    let jwt = jwt_decode(&token);
+                    match jwt {
+                        Ok(j) => {
+                            let c: Claims = j.claims;
+                            info!("token claims: {:?}", c);
+                            TokenDB {
+                                token,
+                                exp: UNIX_EPOCH.add(Duration::from_secs(c.exp as u64)),
+                                uid,
+                            }
+                        },
+                        Err(e) => {
+                            error!("token parse failed: {:?}", e);
+                            TokenDB::default()
+                        }
+                    }
                 })
             })?;
         match r {
-            Some(t) => Ok(t),
-            None => Err(anyhow!("no token found for {}", token))
+            Some(t) if t.uid > 0 => {
+                let now = SystemTime::now();
+                if t.exp < now {
+                    warn!("token exp failed! exp: {:?}, now: {:?}", t.exp, now);
+                    Err(anyhow!("token exp failed"))
+                } else { Ok(t) }
+            }
+            _ => Err(anyhow!("no token found for {}", token))
         }
     }
     pub fn user_check(&self, username: &str, passwd: &str) -> Result<u32> {

@@ -16,7 +16,7 @@ pub struct Hello {
     pub msg: String,
 }
 
-#[derive(Deserialize, Serialize, Default, Debug)]
+#[derive(Deserialize, Serialize, Default, Debug, Clone)]
 pub struct Empty;
 
 #[derive(Deserialize, Serialize, Debug)]

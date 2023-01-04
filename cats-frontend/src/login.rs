@@ -27,8 +27,8 @@ pub fn LoginPage() -> Html {
             let login_done = login_done.clone();
             console::log_2(&"login username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
-                let r: Response<LoginResponse> = fetch(Method::POST, format!("{}/login", API).as_str(),
-                                                       LoginPost { username, passwd: hashed })
+                let r: Response<LoginResponse> = fetch_refresh(Method::POST, format!("{}/login", API).as_str(),
+                                                               LoginPost { username, passwd: hashed }, false, true)
                     .await.unwrap_or(Response::error("error", LoginResponse::default()));
                 console::log_1(&format!("{:?}", r).into());
                 save_token(&r.data.token).unwrap();
@@ -55,7 +55,7 @@ pub fn LoginPage() -> Html {
     let refresh_click = Callback::from(move |_| {
         wasm_bindgen_futures::spawn_local(async move {
             let r: Response<TokenDB> = fetch_refresh(Method::GET, format!("{}/refresh", API).as_str(),
-                                                     Empty::default(), true)
+                                                     Empty::default(), true, true)
                 .await.unwrap_or(Response::error("error", TokenDB::default()));
             console::log_1(&format!("{:?}", r).into());
         });
@@ -99,13 +99,16 @@ pub fn RegisterPage() -> Html {
             let register_done = register_done.clone();
             console::log_2(&"register username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
-                let r: Response<Empty> = fetch(
+                let r: Response<Empty> = match fetch_refresh(
                     Method::POST, format!("{}/register", API).as_str(),
                     RegisterPost {
                         user: User { username, uid: 0, head: "https://yew.rs/img/logo.png".to_string(), usernick, motto },
                         passwd: hashed,
-                    })
-                    .await.unwrap_or(Response::err());
+                    }, false, true)
+                    .await {
+                    Ok(v) => v,
+                    Err(e) => Response::error(&e.to_string(), Empty::default())
+                };
                 console::log_1(&format!("{:?}", r).into());
                 match r.code {
                     200 => register_done.set(true),

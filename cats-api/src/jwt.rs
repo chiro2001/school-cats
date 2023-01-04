@@ -5,12 +5,13 @@ use serde::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    uid: u32,
-    exp: usize,
+    pub uid: u32,
+    pub exp: usize,
 }
 
 /// normal token exp: 1h
-pub const EXP_TOKEN: u64 = 1 * 60 * 60;
+// pub const EXP_TOKEN: u64 = 1 * 60 * 60;
+pub const EXP_TOKEN: u64 = 10;
 /// refresh token exp: 24h
 pub const EXP_REFRESH: u64 = 24 * 60 * 60;
 

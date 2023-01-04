@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::cats::CatDB;
 use crate::user::User;
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct PostsPost {
     pub text: String,
     pub images: Vec<String>,
@@ -32,7 +32,7 @@ impl Default for PostsContentDB {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct CommentDB {
     pub commentId: u32,
     pub userId: u32,

@@ -7,11 +7,11 @@ use web_sys::console;
 use cats_api::user::User;
 use crate::storage::{load_string, save_string, storage};
 use anyhow::{anyhow, Result};
-use gloo_net::http::Method;
+use gloo_net::http::{Method, Request};
 use yew::{Html, function_component, html, use_state, use_effect_with_deps, Callback, Properties, UseStateHandle};
 use cats_api::{Empty, Response};
 use cats_api::jwt::TokenDB;
-use crate::api::{API, fetch, fetch_refresh, save_refresh_token, save_token};
+use crate::api::{API, fetch, save_refresh_token, save_token};
 use crate::user::TokenError::RefreshTokenInvalid;
 use crate::utils::reload;
 
@@ -30,12 +30,27 @@ impl Display for TokenError {
 impl Error for TokenError {}
 
 async fn fetch_refreshed_token(refresh_token: &str) -> Result<TokenDB, TokenError> {
+    console::log_1(&format!("fetch_refreshed_token: {}", refresh_token).into());
     save_refresh_token(refresh_token).map_err(|_| RefreshTokenInvalid)?;
-    let r: Response<TokenDB> = fetch_refresh(Method::GET, &format!("{}/refresh", API), Empty::default(), true)
-        .await.map_err(|_| RefreshTokenInvalid)?;
-    match r.code {
-        200 => Ok(r.data),
-        _ => Err(RefreshTokenInvalid)
+    let url = format!("{}/refresh", API);
+    // let r: Response<TokenDB> = fetch_refresh(Method::GET, &format!("{}/refresh", API), Empty::default(), true)
+    //     .await.map_err(|_| RefreshTokenInvalid)?;
+    let pre = Request::get(url.as_str())
+        .header("Content-Type", "application/json")
+        .header("Refresh-Token", refresh_token);
+    match pre.send().await {
+        Ok(v) => {
+            match v.json::<Response<TokenDB>>().await {
+                Ok(r) => {
+                    match r.code {
+                        200 => Ok(r.data),
+                        _ => Err(RefreshTokenInvalid)
+                    }
+                }
+                Err(_e) => Err(RefreshTokenInvalid)
+            }
+        }
+        Err(_e) => Err(RefreshTokenInvalid)
     }
 }
 
@@ -144,7 +159,7 @@ pub fn UserInfoComponent() -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct UserInfoProps {
-    pub id: u32
+    pub id: u32,
 }
 
 #[function_component]
