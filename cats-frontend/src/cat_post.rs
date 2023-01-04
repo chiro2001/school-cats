@@ -39,7 +39,7 @@ pub fn PostItem(props: &PostItemProps) -> Html {
             </ul>
         }
     };
-    let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()}/> };
+    let image_render: fn(&String) -> Html = |s| html! { <img src={s.to_string()} style="max-width: 400px"/> };
     let comment_input = NodeRef::default();
     let post_comment = {
         let comment_input = comment_input.clone();
