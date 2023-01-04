@@ -23,11 +23,12 @@ pub fn LoginPage() -> Html {
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
             let passwd: String = passwd.cast::<HtmlInputElement>().unwrap().value().into();
+            let hashed = sha256::digest(passwd);
             let login_done = login_done.clone();
             console::log_2(&"login username:".into(), &username.clone().into());
             wasm_bindgen_futures::spawn_local(async move {
                 let r: Response<LoginResponse> = fetch(Method::POST, format!("{}/login", API).as_str(),
-                                                       LoginPost { username, passwd })
+                                                       LoginPost { username, passwd: hashed })
                     .await.unwrap_or(Response::error("error", LoginResponse::default()));
                 console::log_1(&format!("{:?}", r).into());
                 save_token(&r.data.token).unwrap();
@@ -37,7 +38,7 @@ pub fn LoginPage() -> Html {
                         console::log_1(&format!("login user: {:?}", u).into());
                         save_user(&u).unwrap();
                         login_done.set(true);
-                    },
+                    }
                     Err(e) => console::log_1(&format!("login failed: {:?}", e).into())
                 };
             });
@@ -92,6 +93,7 @@ pub fn RegisterPage() -> Html {
         Callback::from(move |_| {
             let username: String = username.cast::<HtmlInputElement>().unwrap().value().into();
             let passwd: String = passwd.cast::<HtmlInputElement>().unwrap().value().into();
+            let hashed = sha256::digest(passwd);
             let usernick: String = usernick.cast::<HtmlInputElement>().unwrap().value().into();
             let motto: String = motto.cast::<HtmlInputElement>().unwrap().value().into();
             let register_done = register_done.clone();
@@ -101,7 +103,7 @@ pub fn RegisterPage() -> Html {
                     Method::POST, format!("{}/register", API).as_str(),
                     RegisterPost {
                         user: User { username, uid: 0, head: "https://yew.rs/img/logo.png".to_string(), usernick, motto },
-                        passwd,
+                        passwd: hashed,
                     })
                     .await.unwrap_or(Response::err());
                 console::log_1(&format!("{:?}", r).into());

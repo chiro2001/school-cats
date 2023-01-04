@@ -83,7 +83,7 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
     conn.query_drop("INSERT INTO CatBreed (breedName,breedDesc) VALUES (\"未知\",\"普通小猫\")")?;
     assert_eq!(1, conn.last_insert_id());
     // insert default cat
-    let cat = CatDB { name: "小白".to_string(), ..CatDB::default() };
+    let cat = CatDB { name: "胖橘".to_string(), ..CatDB::default() };
     let datetime: DateTime<Utc> = cat.foundTime.into();
     let time = datetime.naive_utc();
     conn.exec_drop("INSERT INTO Cat (breedId,name,foundTime,source,atSchool,whereabouts,health) \

@@ -77,6 +77,7 @@ pub fn Information() -> Html {
                     Ok(data) => {
                         fetch(Method::POST, format!("{}/cat", API).as_str(), data)
                             .await.unwrap_or(Response::default_error(0));
+                        reload();
                     }
                     Err(e) => { console!(format!("{:?}", e)); }
                 };
