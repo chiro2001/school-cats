@@ -60,7 +60,7 @@ pub async fn fetch<B: Serialize + Clone, T: for<'de> Deserialize<'de>>(method: M
                 200 => Ok(v),
                 _ => {
                     match v.msg.as_str() {
-                        "token exp failed" => {
+                        s if s == "token exp failed" || s.starts_with("no token") => {
                             save_token("invalid").unwrap();
                             fetch_refresh(method, url, body, false, false).await
                         }

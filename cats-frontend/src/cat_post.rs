@@ -193,8 +193,10 @@ pub fn Posts() -> Html {
                     Method::POST, format!("{}/post", API).as_str(),
                     PostsPost { text, images, places, cats: cats_selected.deref().iter().map(|c| c.catId).collect() })
                     .await.unwrap_or(Response::default_error(Empty::default()));
-                console::log_1(&format!("{:?}", r).into());
-                reload();
+                match r.code {
+                    200 => reload(),
+                    _ => console::log_1(&format!("{:?}", r).into())
+                };
             });
         })
     };

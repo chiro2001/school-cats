@@ -24,7 +24,12 @@ pub fn load_string_or(key: &str, default: &str) -> String {
 }
 
 pub fn save_string(key: &str, value: &str) -> Result<()> {
-    console::log_1(&format!("saving string key:{}, value:{}", key, value).into());
+    match load_string(key) {
+        Ok(s) if s == value => {}
+        _ => {
+            console::log_1(&format!("updating string key:{}, value:{}", key, value).into());
+        }
+    };
     let s = storage();
     match s.set_item(key, value) {
         Ok(()) => Ok(()),
