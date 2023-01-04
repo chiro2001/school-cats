@@ -1,4 +1,4 @@
-drop VIEW IF EXISTS FindPostlaces;
+drop VIEW IF EXISTS FindPostPlaces;
 
 drop VIEW IF EXISTS FindPostImages;
 
@@ -242,7 +242,7 @@ SELECT PostContent.postId,Image.url
             FROM PostContent JOIN PostImage ON PostContent.postId=PostImage.postId
             JOIN Image ON Image.imageId=PostImage.imageId;
 
-create VIEW  FindPostlaces
+create VIEW  FindPostPlaces
  as
 SELECT PostContent.postId,Place.details
             FROM PostContent JOIN PostPlace ON PostContent.postId=PostPlace.postId
