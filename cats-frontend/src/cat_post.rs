@@ -285,7 +285,7 @@ pub fn Posts() -> Html {
                 <select ref={cats_select}>
                 { for cats.iter().map(|cat| html! { <option value={cat.catId.to_string()}>{cat.name.to_string()}</option> })}
                 </select><button onclick={select_cat}>{ "选择猫猫" }</button>
-                <p>{ "猫猫图" }</p>
+                <p>{ "猫猫图 " }<button onclick={push_image}>{ "添加图片" }</button></p>
                 <ul>
                     { for images.iter().map(image_render) }
                 </ul>
@@ -298,7 +298,6 @@ pub fn Posts() -> Html {
                     <input ref={place_input}/><button onclick={add_place}>{ "添加新地点" }</button>
                 </div>
                 <input ref={input_file} type="file" style="display: none;" onchange={input_file_change} accept="image/png,.jpg" multiple={true}/>
-                <button onclick={push_image}>{ "添加图片" }</button>
                 <button onclick={post}>{ "发布猫猫贴" }</button>
             </span>
         </div>
