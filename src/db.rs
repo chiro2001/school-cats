@@ -47,7 +47,7 @@ pub async fn db_init(pool: &Pool) -> Result<()> {
         }
         let exec = format!("{};", t);
         info!("exec: {}", exec);
-        let r: Result<Vec<String>> = match conn.exec(exec, Params::Empty) {
+        let r: Result<Vec<String>> = match conn.query(exec) {
             Ok(r) => Ok(r),
             Err(e) => Err(anyhow!("{:?}", e)),
         };
@@ -150,7 +150,7 @@ impl Database {
                                 exp: UNIX_EPOCH.add(Duration::from_secs(c.exp as u64)),
                                 uid,
                             }
-                        },
+                        }
                         Err(e) => {
                             error!("token parse failed: {:?}", e);
                             TokenDB::default()

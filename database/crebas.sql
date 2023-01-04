@@ -1,3 +1,5 @@
+drop trigger IF EXISTS CleanToken;
+
 drop VIEW IF EXISTS FindPostPlaces;
 
 drop VIEW IF EXISTS FindPostImages;
@@ -255,4 +257,10 @@ create VIEW  FindPostPlaces
 SELECT PostContent.postId,Place.details
             FROM PostContent JOIN PostPlace ON PostContent.postId=PostPlace.postId
             JOIN Place ON PostPlace.placeId=Place.placeId;
+
+
+CREATE TRIGGER CleanToken 
+BEFORE INSERT ON Token 
+FOR EACH ROW
+	DELETE FROM Token WHERE exp > NOW();
 
