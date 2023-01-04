@@ -1,3 +1,11 @@
+drop VIEW IF EXISTS FindPostlaces;
+
+drop VIEW IF EXISTS FindPostImages;
+
+drop VIEW IF EXISTS FindPostComments;
+
+drop VIEW IF EXISTS FindPostCats;
+
 drop table if exists Appear;
 
 drop table if exists Cat;
@@ -212,4 +220,31 @@ create table Treat
    constraint FK_Treat3 foreign key (userId)
       references User (userId) on delete restrict on update restrict
 );
+
+create VIEW  FindPostCats
+ as
+SELECT PostContent.postId,Cat.catId,Cat.breedId,Cat.name,Cat.foundTime,Cat.source,Cat.atSchool,Cat.whereabouts,Cat.health
+            FROM PostContent JOIN PostCat ON PostContent.postId=PostCat.postId
+            JOIN Cat ON PostCat.catId=Cat.catId;
+
+create VIEW  FindPostComments
+ as
+SELECT PostContent.postId,CommentContent.commentText,PostComment.userId,User.username,Image.url,User.usernick,User.motto
+	        FROM PostContent
+	        JOIN PostComment ON PostContent.postId=PostComment.postId
+	        JOIN User ON PostComment.postId=User.userId
+	        JOIN Image ON User.imageId=Image.imageId
+	        JOIN CommentContent ON CommentContent.commentId=PostComment.commentId;
+
+create VIEW  FindPostImages
+ as
+SELECT PostContent.postId,Image.url
+            FROM PostContent JOIN PostImage ON PostContent.postId=PostImage.postId
+            JOIN Image ON Image.imageId=PostImage.imageId;
+
+create VIEW  FindPostlaces
+ as
+SELECT PostContent.postId,Place.details
+            FROM PostContent JOIN PostPlace ON PostContent.postId=PostPlace.postId
+            JOIN Place ON PostPlace.placeId=Place.placeId;
 

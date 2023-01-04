@@ -25,7 +25,7 @@ pub async fn upload_image(form: FormData) -> Result<impl Reply, Rejection> {
                     "image/png" => {
                         file_ending = "png";
                     }
-                    "image/jpg" => {
+                    "image/jpg" | "image/jpeg" => {
                         file_ending = "jpg";
                     }
                     v => {
